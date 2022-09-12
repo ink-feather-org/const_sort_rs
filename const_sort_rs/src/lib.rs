@@ -24,9 +24,6 @@
 #![feature(const_maybe_uninit_write)] // const_sort_core
 #![feature(is_sorted)] // For tests
 
-#[cfg(feature = "alloc")]
-extern crate alloc;
-
 mod const_sort;
 pub use const_sort::*;
 

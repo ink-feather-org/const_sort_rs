@@ -1,4 +1,4 @@
-use alloc::slice;
+use core::slice;
 /// # Safety
 ///
 /// Calling this method with an out-of-bounds index is *[undefined behavior]*

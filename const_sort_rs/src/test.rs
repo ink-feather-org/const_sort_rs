@@ -1,3 +1,4 @@
+extern crate alloc;
 use alloc::vec::Vec;
 use rand::{prelude::StdRng, Rng, SeedableRng};
 const RAND_CNT: usize = 10_000;
