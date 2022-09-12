@@ -1,0 +1,21 @@
+[package]
+name = "const_sort_rs"
+version = "0.0.1"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = [
+  "raldone01 <raldone01@gmail.com>",
+  "onestacked <chrisi.schrefl@gmail.com>",
+]
+description = "Rust sort algos in const items."
+homepage = "https://github.com/raldone01/const_sort_rs"
+repository = "https://github.com/raldone01/const_sort_rs"
+categories = ["no-std", "rust-patterns"]
+keywords = ["sort", "const", "nightly"]
+
+[features]
+default = ["alloc"]
+alloc = []
+mut_refs = []
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
