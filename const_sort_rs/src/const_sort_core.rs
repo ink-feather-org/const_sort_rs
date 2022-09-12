@@ -363,7 +363,7 @@ where
       // for i in 0..block_l {
       let mut i = 0;
       while i < block_l {
-        // SAFETY: The unsafety operations below involve the usage of the `offset`.
+        // SAFETY: The unsafe operations below involve the usage of the `offset`.
         //         According to the conditions required by the function, we satisfy them because:
         //         1. `offsets_l` is stack-allocated, and thus considered separate allocated object.
         //         2. The function `is_less` returns a `bool`.
@@ -371,10 +371,10 @@ where
         //         3. We have guaranteed that `block_l` will be `<= BLOCK`.
         //            Plus, `end_l` was initially set to the begin pointer of `offsets_` which was declared on the stack.
         //            Thus, we know that even in the worst case (all invocations of `is_less` returns false) we will only be at most 1 byte pass the end.
-        //        Another unsafety operation here is dereferencing `elem`.
+        //        Another unsafe operation here is dereferencing `elem`.
         //        However, `elem` was initially the begin pointer to the slice which is always valid.
         {
-          // Branchless comparison.
+          // branchless comparison.
           offsets_l[end_l].write(i as u8);
           end_l = end_l
             .checked_add_signed(!is_less(&v[elem], pivot) as isize)
@@ -394,7 +394,7 @@ where
       // for i in 0..block_r {
       let mut i = 0;
       while i < block_r {
-        // SAFETY: The unsafety operations below involve the usage of the `offset`.
+        // SAFETY: The unsafe operations below involve the usage of the `offset`.
         //         According to the conditions required by the function, we satisfy them because:
         //         1. `offsets_r` is stack-allocated, and thus considered separate allocated object.
         //         2. The function `is_less` returns a `bool`.
@@ -402,11 +402,11 @@ where
         //         3. We have guaranteed that `block_r` will be `<= BLOCK`.
         //            Plus, `end_r` was initially set to the begin pointer of `offsets_` which was declared on the stack.
         //            Thus, we know that even in the worst case (all invocations of `is_less` returns true) we will only be at most 1 byte pass the end.
-        //        Another unsafety operation here is dereferencing `elem`.
+        //        Another unsafe operation here is dereferencing `elem`.
         //        However, `elem` was initially `1 * sizeof(T)` past the end and we decrement it by `1 * sizeof(T)` before accessing it.
         //        Plus, `block_r` was asserted to be less than `BLOCK` and `elem` will therefore at most be pointing to the beginning of the slice.
         {
-          // Branchless comparison.
+          // branchless comparison.
           elem = elem - 1;
           offsets_r[end_r].write(i as u8);
           end_r = end_r
@@ -581,7 +581,7 @@ where
     let mut l = 0;
     let mut r = v.len();
 
-    // SAFETY: The unsafety below involves indexing an array.
+    // SAFETY: The unsafe below involves indexing an array.
     // For the first one: We already do the bounds checking here with `l < r`.
     // For the second one: We initially have `l == 0` and `r == v.len()` and we checked that `l < r` at every indexing operation.
     //                     From here we know that `r` must be at least `r == l` which was shown to be valid from the first one.
@@ -640,7 +640,7 @@ where
   let mut l = 0;
   let mut r = v.len();
   loop {
-    // SAFETY: The unsafety below involves indexing an array.
+    // SAFETY: The unsafe below involves indexing an array.
     // For the first one: We already do the bounds checking here with `l < r`.
     // For the second one: We initially have `l == 0` and `r == v.len()` and we checked that `l < r` at every indexing operation.
     //                     From here we know that `r` must be at least `r == l` which was shown to be valid from the first one.
@@ -750,9 +750,9 @@ where
 
   if len >= 8 {
     // Swaps indices so that `v[a] <= v[b]`.
-    // SAFETY: `len >= 8` so there are at least two elements in the neighborhoods of
+    // SAFETY: `len >= 8` so there are at least two elements in the neighbourhoods of
     // `a`, `b` and `c`. This means the three calls to `sort_adjacent` result in
-    // corresponding calls to `sort3` with valid 3-item neighborhoods around each
+    // corresponding calls to `sort3` with valid 3-item neighbourhoods around each
     // pointer, which in turn means the calls to `sort2` are done with valid
     // references. Thus the `v.get_unchecked` calls are safe, as is the `ptr::swap`
     // call.
@@ -799,7 +799,7 @@ where
         sort3(v, is_less, swaps, &mut (tmp - 1), a, &mut (tmp + 1));
       }
 
-      // Find medians in the neighborhoods of `a`, `b`, and `c`.
+      // Find medians in the neighbourhoods of `a`, `b`, and `c`.
       sort_adjacent(v, is_less, &mut swaps, &mut a);
       sort_adjacent(v, is_less, &mut swaps, &mut b);
       sort_adjacent(v, is_less, &mut swaps, &mut c);
@@ -919,7 +919,7 @@ pub const fn const_quicksort<'a, T, F>(v: &mut [T], mut is_less: F)
 where
   F: ~const FnMut(&T, &T) -> bool + ~const Destruct,
 {
-  // Sorting has no meaningful behavior on zero-sized types.
+  // Sorting has no meaningful behaviour on zero-sized types.
   if mem::size_of::<T>() == 0 {
     return;
   }

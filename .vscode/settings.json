@@ -1,6 +1,18 @@
 {
     "cSpell.diagnosticLevel": "Information",
     "cSpell.words": [
-        "mut_refs"
+        "branchless",
+        "elem",
+        "heapsort",
+        "libcore",
+        "Marsaglia",
+        "mut_refs",
+        "nonoverlapping",
+        "pred",
+        "refs",
+        "Seedable",
+        "Uninit",
+        "VLAs",
+        "Xorshift"
     ]
 }

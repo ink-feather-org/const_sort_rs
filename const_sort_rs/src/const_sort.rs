@@ -27,7 +27,7 @@ const fn partition<T: ~const PartialOrd + Ord>(inp: &mut [T]) -> (&mut [T], &mut
       p = i;
     }
   }
-  // SAFETY: since i, j and p are allways in bound this is safe.
+  // SAFETY: since i, j and p are always in bound this is safe.
   unsafe { split_at_mut_unchecked(inp, p) }
 }
 
