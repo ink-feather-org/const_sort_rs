@@ -313,8 +313,8 @@ where
   // SAFETY: The documentation for .add() specifically mention that `vec.as_ptr().add(vec.len())` is always safe`
   let mut r = unsafe { l.add(v.len()) };
   let mut block_r = BLOCK;
-  let mut start_r = ptr::null_mut();
-  let mut end_r = ptr::null_mut();
+  let mut start_r = 0; // indexes offsets_r
+  let mut end_r = 0; // holds end of offsets_r
   let mut offsets_r = [MaybeUninit::<u8>::uninit(); BLOCK];
 
   // FIXME: When we get VLAs, try creating one array of length `min(v.len(), 2 * BLOCK)` rather
@@ -342,10 +342,7 @@ where
     if is_done {
       // Number of remaining elements (still not compared to the pivot).
       let mut rem = width(l, r);
-      if unsafe {
-        start_l < end_l
-          || (mem::transmute::<_, usize>(start_r)) < (mem::transmute::<_, usize>(end_r))
-      } {
+      if start_l < end_l || start_r < end_r {
         rem -= BLOCK;
       }
 
@@ -353,9 +350,7 @@ where
       // aligned to cover the whole remaining gap.
       if start_l < end_l {
         block_r = rem;
-      } else if unsafe {
-        (mem::transmute::<_, usize>(start_r)) < (mem::transmute::<_, usize>(end_r))
-      } {
+      } else if start_r < end_r {
         block_l = rem;
       } else {
         // There were the same number of elements to switch on both blocks during the last
@@ -399,9 +394,9 @@ where
       }
     }
 
-    if unsafe { (mem::transmute::<_, usize>(start_r)) == (mem::transmute::<_, usize>(end_r)) } {
+    if start_r == end_r {
       // Trace `block_r` elements from the right side.
-      start_r = MaybeUninit::slice_as_mut_ptr(&mut offsets_r);
+      start_r = 0;
       end_r = start_r;
       let mut elem = r;
 
@@ -422,15 +417,17 @@ where
         unsafe {
           // Branchless comparison.
           elem = elem.offset(-1);
-          *end_r = i as u8;
-          end_r = end_r.offset(is_less(&*elem, pivot) as isize);
+          offsets_r[end_r].write(i as u8);
+          end_r = end_r
+            .checked_add_signed(is_less(&*elem, pivot) as isize)
+            .unwrap();
         }
         i += 1;
       }
     }
 
     // Number of out-of-order elements to swap between the left and right side.
-    let count = cmp::min(width2(start_l, end_l), width(start_r, end_r));
+    let count = cmp::min(width2(start_l, end_l), width2(start_r, end_r));
 
     if count > 0 {
       macro_rules! left {
@@ -440,7 +437,7 @@ where
       }
       macro_rules! right {
         () => {
-          r.offset(-(*start_r as isize) - 1)
+          r.offset(-(offsets_r[start_r].assume_init() as isize) - 1)
         };
       }
 
@@ -472,7 +469,7 @@ where
         while oi < count {
           start_l = start_l + 1;
           ptr::copy_nonoverlapping(left!(), right!(), 1);
-          start_r = start_r.offset(1);
+          start_r = start_r + 1;
           ptr::copy_nonoverlapping(right!(), left!(), 1);
           oi += 1;
         }
@@ -480,7 +477,7 @@ where
         ptr::copy_nonoverlapping(&tmp, right!(), 1);
         mem::forget(tmp);
         start_l = start_l + 1;
-        start_r = start_r.offset(1);
+        start_r = start_r + 1;
       }
     }
 
@@ -496,7 +493,7 @@ where
       l = unsafe { l.offset(block_l as isize) };
     }
 
-    if unsafe { (mem::transmute::<_, usize>(start_r)) == (mem::transmute::<_, usize>(end_r)) } {
+    if start_r == end_r {
       // All out-of-order elements in the right block were moved. Move to the previous block.
 
       // SAFETY: Same argument as [block-width-guarantee]. Either this is a full block `2*BLOCK`-wide,
@@ -539,15 +536,15 @@ where
       }
     }
     width(v.as_mut_ptr(), r)
-  } else if unsafe { (mem::transmute::<_, usize>(start_r)) < (mem::transmute::<_, usize>(end_r)) } {
+  } else if start_r < end_r {
     // The right block remains.
     // Move its remaining out-of-order elements to the far left.
     // debug_assert_eq!(width(l, r), block_r);
-    while unsafe { (mem::transmute::<_, usize>(start_r)) < (mem::transmute::<_, usize>(end_r)) } {
+    while start_r < end_r {
       // SAFETY: See the reasoning in [remaining-elements-safety].
       unsafe {
-        end_r = end_r.offset(-1);
-        ptr::swap(l, r.offset(-(*end_r as isize) - 1));
+        end_r = end_r - 1;
+        ptr::swap(l, r.offset(-(offsets_r[end_r].assume_init() as isize) - 1));
         l = l.offset(1);
       }
     }
