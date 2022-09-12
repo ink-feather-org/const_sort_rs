@@ -305,8 +305,8 @@ where
   // The current block on the left side (from `l` to `l.add(block_l)`).
   let mut l = v.as_mut_ptr();
   let mut block_l = BLOCK;
-  let mut start_l = ptr::null_mut();
-  let mut end_l = ptr::null_mut();
+  let mut start_l = 0; // indexes offsets_l
+  let mut end_l = 0; // holds end of offsets_l
   let mut offsets_l = [MaybeUninit::<u8>::uninit(); BLOCK];
 
   // The current block on the right side (from `r.sub(block_r)` to `r`).
@@ -329,6 +329,11 @@ where
       / mem::size_of::<T>()
   }
 
+  // Returns the number of elements between pointers `l` (inclusive) and `r` (exclusive).
+  const fn width2(l: usize, r: usize) -> usize {
+    r - l
+  }
+
   loop {
     // We are done with partitioning block-by-block when `l` and `r` get very close. Then we do
     // some patch-up work in order to partition the remaining elements in between.
@@ -338,7 +343,7 @@ where
       // Number of remaining elements (still not compared to the pivot).
       let mut rem = width(l, r);
       if unsafe {
-        (mem::transmute::<_, usize>(start_l)) < (mem::transmute::<_, usize>(end_l))
+        start_l < end_l
           || (mem::transmute::<_, usize>(start_r)) < (mem::transmute::<_, usize>(end_r))
       } {
         rem -= BLOCK;
@@ -346,7 +351,7 @@ where
 
       // Adjust block sizes so that the left and right block don't overlap, but get perfectly
       // aligned to cover the whole remaining gap.
-      if unsafe { (mem::transmute::<_, usize>(start_l)) < (mem::transmute::<_, usize>(end_l)) } {
+      if start_l < end_l {
         block_r = rem;
       } else if unsafe {
         (mem::transmute::<_, usize>(start_r)) < (mem::transmute::<_, usize>(end_r))
@@ -363,9 +368,9 @@ where
       debug_assert!(width(l, r) == block_l + block_r);
     }
 
-    if unsafe { (mem::transmute::<_, usize>(start_l)) == (mem::transmute::<_, usize>(end_l)) } {
+    if start_l == end_l {
       // Trace `block_l` elements from the left side.
-      start_l = MaybeUninit::slice_as_mut_ptr(&mut offsets_l);
+      start_l = 0;
       end_l = start_l;
       let mut elem = l;
 
@@ -384,8 +389,10 @@ where
         //        However, `elem` was initially the begin pointer to the slice which is always valid.
         unsafe {
           // Branchless comparison.
-          *end_l = i as u8;
-          end_l = end_l.offset(!is_less(&*elem, pivot) as isize);
+          offsets_l[end_l].write(i as u8);
+          end_l = end_l
+            .checked_add_signed(!is_less(&*elem, pivot) as isize)
+            .unwrap();
           elem = elem.offset(1);
         }
         i += 1;
@@ -423,12 +430,12 @@ where
     }
 
     // Number of out-of-order elements to swap between the left and right side.
-    let count = cmp::min(width(start_l, end_l), width(start_r, end_r));
+    let count = cmp::min(width2(start_l, end_l), width(start_r, end_r));
 
     if count > 0 {
       macro_rules! left {
         () => {
-          l.offset(*start_l as isize)
+          l.offset(offsets_l[start_l].assume_init() as isize)
         };
       }
       macro_rules! right {
@@ -463,7 +470,7 @@ where
         // for _ in 1..count {
         let mut oi = 1;
         while oi < count {
-          start_l = start_l.offset(1);
+          start_l = start_l + 1;
           ptr::copy_nonoverlapping(left!(), right!(), 1);
           start_r = start_r.offset(1);
           ptr::copy_nonoverlapping(right!(), left!(), 1);
@@ -472,12 +479,12 @@ where
 
         ptr::copy_nonoverlapping(&tmp, right!(), 1);
         mem::forget(tmp);
-        start_l = start_l.offset(1);
+        start_l = start_l + 1;
         start_r = start_r.offset(1);
       }
     }
 
-    if unsafe { (mem::transmute::<_, usize>(start_l)) == (mem::transmute::<_, usize>(end_l)) } {
+    if start_l == end_l {
       // All out-of-order elements in the left block were moved. Move to the next block.
 
       // block-width-guarantee
@@ -506,11 +513,11 @@ where
   // elements that need to be moved. Such remaining elements can be simply shifted to the end
   // within their block.
 
-  if unsafe { (mem::transmute::<_, usize>(start_l)) < (mem::transmute::<_, usize>(end_l)) } {
+  if start_l < end_l {
     // The left block remains.
     // Move its remaining out-of-order elements to the far right.
     // debug_assert_eq!(width(l, r), block_l);
-    while unsafe { (mem::transmute::<_, usize>(start_l)) < (mem::transmute::<_, usize>(end_l)) } {
+    while start_l < end_l {
       // remaining-elements-safety
       // SAFETY: while the loop condition holds there are still elements in `offsets_l`, so it
       // is safe to point `end_l` to the previous element.
@@ -523,8 +530,11 @@ where
       //  - `offsets_l` contains valid offsets into `v` collected during the partitioning of
       //    the last block, so the `l.offset` calls are valid.
       unsafe {
-        end_l = end_l.offset(-1);
-        ptr::swap(l.offset(*end_l as isize), r.offset(-1));
+        end_l = end_l - 1;
+        ptr::swap(
+          l.offset(offsets_l[end_l].assume_init() as isize),
+          r.offset(-1),
+        );
         r = r.offset(-1);
       }
     }

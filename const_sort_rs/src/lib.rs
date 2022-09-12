@@ -20,6 +20,8 @@
 #![feature(const_ptr_read)] // const_sort_core
 #![feature(const_deref)] // const_sort_core
 #![feature(const_reverse)] // const_sort_core
+#![feature(mixed_integer_ops)] // const_sort_core
+#![feature(const_maybe_uninit_write)] // const_sort_core
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
