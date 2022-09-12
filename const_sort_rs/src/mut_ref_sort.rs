@@ -76,13 +76,15 @@ where
       };
       ptr::copy_nonoverlapping(&v[1], &mut v[0], 1);
 
-      //for i in 2..v.len() {
-      for i in 2..v.len() {
+      // for i in 2..v.len() {
+      let mut i = 2;
+      while i < v.len() {
         if !is_less(&v[i], &*tmp) {
           break;
         }
         ptr::copy_nonoverlapping(&v[i], &mut v[i - 1], 1);
         hole.dest = &mut v[i];
+        i += 1;
       }
       // `hole` gets dropped and thus copies `tmp` into the remaining hole in `v`.
     }
@@ -103,7 +105,7 @@ where
   }
 }
 
-const unsafe fn merge<T, F>(v: &mut [T], mid: usize, buf: *mut T, is_less: &mut F)
+const unsafe fn merge<T, F>(v: &mut [Option<T>], mid: usize, buf: *mut T, is_less: &mut F)
 where
   F: FnMut(&T, &T) -> bool,
   *mut T: ~const PartialOrd,
@@ -134,7 +136,7 @@ where
   if mid <= len - mid {
     // The left run is shorter.
     unsafe {
-      ptr::copy_nonoverlapping(v, buf, mid);
+      ptr::copy_nonoverlapping(v, buf as *mut Option<T>, mid);
       hole = MergeHole {
         start: buf,
         end: buf.add(mid),
@@ -241,8 +243,11 @@ where
   // Short arrays get sorted in-place via insertion sort to avoid allocations.
   if len <= MAX_INSERTION {
     if len >= 2 {
-      for i in (0..len - 1).rev() {
+      // for i in (0..len - 1).rev() {
+      let mut i = len - 2;
+      while i >= 0 {
         insert_head(&mut v[i..], &mut is_less);
+        i -= 1;
       }
     }
     return;
@@ -252,7 +257,7 @@ where
   // shallow copies of the contents of `v` without risking the dtors running on copies if
   // `is_less` panics. When merging two sorted runs, this buffer holds a copy of the shorter run,
   // which will always have length at most `len / 2`.
-  let mut buf = Vec::with_capacity(len / 2);
+  let mut buf: [Option<Run>; _] = [None; 99999 /* len / 2 */];
 
   // In order to identify natural runs in `v`, we traverse it backwards. That might seem like a
   // strange decision, but consider the fact that merges more often go in the opposite direction
