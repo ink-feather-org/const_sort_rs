@@ -303,7 +303,7 @@ where
   // 4. `offsets - Indices of out-of-order elements within the block.
 
   // The current block on the left side (from `l` to `l.add(block_l)`).
-  let mut l = v.as_mut_ptr();
+  let mut l = 0;
   let mut block_l = BLOCK;
   let mut start_l = 0; // indexes offsets_l
   let mut end_l = 0; // holds end of offsets_l
@@ -311,7 +311,7 @@ where
 
   // The current block on the right side (from `r.sub(block_r)` to `r`).
   // SAFETY: The documentation for .add() specifically mention that `vec.as_ptr().add(vec.len())` is always safe`
-  let mut r = unsafe { l.add(v.len()) };
+  let mut r = l + v.len();
   let mut block_r = BLOCK;
   let mut start_r = 0; // indexes offsets_r
   let mut end_r = 0; // holds end of offsets_r
@@ -321,16 +321,7 @@ where
   // than two fixed-size arrays of length `BLOCK`. VLAs might be more cache-efficient.
 
   // Returns the number of elements between pointers `l` (inclusive) and `r` (exclusive).
-  const fn width<T>(l: *mut T, r: *mut T) -> usize {
-    assert!(mem::size_of::<T>() > 0);
-    // FIXME: this should *likely* use `offset_from`, but more
-    // investigation is needed (including running tests in miri).
-    (unsafe { (mem::transmute::<_, usize>(r)) - (mem::transmute::<_, usize>(l)) })
-      / mem::size_of::<T>()
-  }
-
-  // Returns the number of elements between pointers `l` (inclusive) and `r` (exclusive).
-  const fn width2(l: usize, r: usize) -> usize {
+  const fn width(l: usize, r: usize) -> usize {
     r - l
   }
 
@@ -382,13 +373,13 @@ where
         //            Thus, we know that even in the worst case (all invocations of `is_less` returns false) we will only be at most 1 byte pass the end.
         //        Another unsafety operation here is dereferencing `elem`.
         //        However, `elem` was initially the begin pointer to the slice which is always valid.
-        unsafe {
+        {
           // Branchless comparison.
           offsets_l[end_l].write(i as u8);
           end_l = end_l
-            .checked_add_signed(!is_less(&*elem, pivot) as isize)
+            .checked_add_signed(!is_less(&v[elem], pivot) as isize)
             .unwrap();
-          elem = elem.offset(1);
+          elem = elem + 1;
         }
         i += 1;
       }
@@ -414,12 +405,12 @@ where
         //        Another unsafety operation here is dereferencing `elem`.
         //        However, `elem` was initially `1 * sizeof(T)` past the end and we decrement it by `1 * sizeof(T)` before accessing it.
         //        Plus, `block_r` was asserted to be less than `BLOCK` and `elem` will therefore at most be pointing to the beginning of the slice.
-        unsafe {
+        {
           // Branchless comparison.
-          elem = elem.offset(-1);
+          elem = elem - 1;
           offsets_r[end_r].write(i as u8);
           end_r = end_r
-            .checked_add_signed(is_less(&*elem, pivot) as isize)
+            .checked_add_signed(is_less(&v[elem], pivot) as isize)
             .unwrap();
         }
         i += 1;
@@ -427,17 +418,19 @@ where
     }
 
     // Number of out-of-order elements to swap between the left and right side.
-    let count = cmp::min(width2(start_l, end_l), width2(start_r, end_r));
+    let count = cmp::min(width(start_l, end_l), width(start_r, end_r));
 
     if count > 0 {
       macro_rules! left {
         () => {
-          l.offset(offsets_l[start_l].assume_init() as isize)
+          l.checked_add_signed(offsets_l[start_l].assume_init() as isize)
+            .unwrap()
         };
       }
       macro_rules! right {
         () => {
-          r.offset(-(offsets_r[start_r].assume_init() as isize) - 1)
+          r.checked_add_signed(-(offsets_r[start_r].assume_init() as isize) - 1)
+            .unwrap()
         };
       }
 
@@ -461,20 +454,20 @@ where
       // The calls to `copy_nonoverlapping` are safe because `left!` and `right!` are guaranteed
       // not to overlap, and are valid because of the reasoning above.
       unsafe {
-        let tmp = ptr::read(left!());
-        ptr::copy_nonoverlapping(right!(), left!(), 1);
+        let tmp = ptr::read(v.as_mut_ptr().add(left!()));
+        ptr::copy_nonoverlapping(&mut v[right!()], &mut v[left!()], 1);
 
         // for _ in 1..count {
         let mut oi = 1;
         while oi < count {
           start_l = start_l + 1;
-          ptr::copy_nonoverlapping(left!(), right!(), 1);
+          ptr::copy_nonoverlapping(&mut v[left!()], &mut v[right!()], 1);
           start_r = start_r + 1;
-          ptr::copy_nonoverlapping(right!(), left!(), 1);
+          ptr::copy_nonoverlapping(&mut v[right!()], &mut v[left!()], 1);
           oi += 1;
         }
 
-        ptr::copy_nonoverlapping(&tmp, right!(), 1);
+        ptr::copy_nonoverlapping(&tmp, &mut v[right!()], 1);
         mem::forget(tmp);
         start_l = start_l + 1;
         start_r = start_r + 1;
@@ -490,7 +483,7 @@ where
       // safe. Otherwise, the debug assertions in the `is_done` case guarantee that
       // `width(l, r) == block_l + block_r`, namely, that the block sizes have been adjusted to account
       // for the smaller number of remaining elements.
-      l = unsafe { l.offset(block_l as isize) };
+      l = l + block_l;
     }
 
     if start_r == end_r {
@@ -498,7 +491,7 @@ where
 
       // SAFETY: Same argument as [block-width-guarantee]. Either this is a full block `2*BLOCK`-wide,
       // or `block_r` has been adjusted for the last handful of elements.
-      r = unsafe { r.offset(-(block_r as isize)) };
+      r = r.checked_add_signed(-(block_r as isize)).unwrap();
     }
 
     if is_done {
@@ -528,14 +521,11 @@ where
       //    the last block, so the `l.offset` calls are valid.
       unsafe {
         end_l = end_l - 1;
-        ptr::swap(
-          l.offset(offsets_l[end_l].assume_init() as isize),
-          r.offset(-1),
-        );
-        r = r.offset(-1);
+        v.swap(l + offsets_l[end_l].assume_init() as usize, r - 1);
+        r = r - 1;
       }
     }
-    width(v.as_mut_ptr(), r)
+    width(0, r)
   } else if start_r < end_r {
     // The right block remains.
     // Move its remaining out-of-order elements to the far left.
@@ -544,14 +534,18 @@ where
       // SAFETY: See the reasoning in [remaining-elements-safety].
       unsafe {
         end_r = end_r - 1;
-        ptr::swap(l, r.offset(-(offsets_r[end_r].assume_init() as isize) - 1));
-        l = l.offset(1);
+        v.swap(
+          l,
+          r.checked_add_signed(-(offsets_r[end_r].assume_init() as isize) - 1)
+            .unwrap(),
+        );
+        l = l + 1;
       }
     }
-    width(v.as_mut_ptr(), l)
+    width(0, l)
   } else {
     // Nothing else to do, we're done.
-    width(v.as_mut_ptr(), l)
+    width(0, l)
   }
 }
 
