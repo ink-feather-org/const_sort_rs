@@ -13,9 +13,29 @@ mod test {
   }
 
   #[test]
-  fn test_const_sort() {
+  fn test_const_array_sort() {
     const ARR: [u8; 4] = [2, 3, 5, 4];
     const SORTED: [u8; 4] = ARR.const_sort_unstable();
     assert_eq!(&SORTED, &[2, 3, 4, 5])
+  }
+
+  #[test]
+  fn test_const_core_slice_heapsort() {
+    const ARR: [u8; 4] = {
+      let mut x = [2, 3, 5, 4];
+      x.const_heapsort();
+      x
+    };
+    assert_eq!(&ARR, &[2, 3, 4, 5])
+  }
+
+  #[test]
+  fn test_const_core_slice_quicksort() {
+    const ARR: [u8; 4] = {
+      let mut x = [2, 3, 5, 4];
+      x.const_quicksort();
+      x
+    };
+    assert_eq!(&ARR, &[2, 3, 4, 5])
   }
 }
