@@ -30,7 +30,7 @@ extern crate alloc;
 mod const_sort;
 pub use const_sort::*;
 
-mod utils;
+pub(crate) mod utils;
 
 mod const_sort_core;
 pub use const_sort_core::*;
