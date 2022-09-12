@@ -1,17 +1,4 @@
 use crate::utils::split_at_mut_unchecked;
-/// Trait for Sorting a Array in a Const Context
-pub trait ArrayConstUnstableSortable {
-  /// Sort the array
-  fn const_sort_unstable(self) -> Self;
-}
-
-impl<const N: usize, T: ~const PartialOrd + Ord> const ArrayConstUnstableSortable for [T; N] {
-  fn const_sort_unstable(mut self) -> Self {
-    (&mut self[..]).const_sort_unstable();
-    self
-  }
-}
-
 /// Trait for sorting slices in a const context
 pub trait SliceConstUnstableSortable {
   /// Sort the slice
@@ -40,6 +27,7 @@ const fn partition<T: ~const PartialOrd + Ord>(inp: &mut [T]) -> (&mut [T], &mut
       p = i;
     }
   }
+  // SAFETY: since i, j and p are allways in bound this is safe.
   unsafe { split_at_mut_unchecked(inp, p) }
 }
 

@@ -7,10 +7,7 @@ use alloc::slice;
 ///
 /// [`split_at_mut`]: slice::split_at_mut
 /// [undefined behavior]: https://doc.rust-lang.org/reference/behavior-considered-undefined.html
-pub(crate) const unsafe fn split_at_mut_unchecked<T>(
-  selv: &mut [T],
-  mid: usize,
-) -> (&mut [T], &mut [T]) {
+pub const unsafe fn split_at_mut_unchecked<T>(selv: &mut [T], mid: usize) -> (&mut [T], &mut [T]) {
   // from https://doc.rust-lang.org/src/core/slice/mod.rs.html#1669-1681
   let len = selv.len();
   let ptr = selv.as_mut_ptr();

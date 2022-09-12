@@ -11,7 +11,7 @@ fn gen_array(n: usize) -> Vec<u32> {
 fn const_slice_sort() {
   const ARR: [u8; 4] = {
     let mut x = [2, 3, 5, 4];
-    SliceConstUnstableSortable::const_sort_unstable(&mut x[..]);
+    x.const_sort_unstable();
     x
   };
   assert_eq!(&ARR, &[2, 3, 4, 5])
@@ -21,13 +21,6 @@ fn const_slice_sort_rng() {
   let mut vec = gen_array(RAND_CNT);
   vec.const_sort_unstable();
   assert!(vec.is_sorted())
-}
-
-#[test]
-fn const_array_sort() {
-  const ARR: [u8; 4] = [2, 3, 5, 4];
-  const SORTED: [u8; 4] = ARR.const_sort_unstable();
-  assert_eq!(&SORTED, &[2, 3, 4, 5])
 }
 
 #[test]
