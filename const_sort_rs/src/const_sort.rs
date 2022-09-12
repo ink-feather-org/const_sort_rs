@@ -1,17 +1,31 @@
-pub trait ConstSortable {
+// TODO: merge traits
+pub trait ArrayCopyConstStableSortable {
+  fn const_copy_sort(self, low: usize, high: usize) -> Self;
+}
+
+pub trait ArrayCopyConstUnstableSortable {
+  fn const_copy_sort_unstable(self, low: usize, high: usize) -> Self;
+}
+
+pub trait ArrayConstStableSortable {
   fn const_sort(self, low: usize, high: usize) -> Self;
 }
 
-// Not possible because T might contain interior mutability
+pub trait ArrayConstUnstableSortable {
+  fn const_sort_unstable(self, low: usize, high: usize) -> Self;
+}
+
 // impl<T: Copy + ~const PartialOrd, const N: usize> const ConstSortable for [T; N]
+// Not possible because T might contain interior mutability
+
 #[macro_export]
 macro_rules! impl_static_sorter {
   ($type:ty) => {};
 }
 
 /// TODO: move into impl_static_sorter macro
-impl<const N: usize> const ConstSortable for [u64; N] {
-  fn const_sort(mut self, low: usize, high: usize) -> Self {
+impl<const N: usize> const ArrayCopyConstStableSortable for [u64; N] {
+  fn const_copy_sort(mut self, low: usize, high: usize) -> Self {
     debug_assert!(high < N);
 
     let mut low = isize::try_from(low).ok().unwrap();
@@ -40,7 +54,10 @@ impl<const N: usize> const ConstSortable for [u64; N] {
         }
         if i <= j {
           if i != j {
-            self.swap(i as usize, j as usize);
+            let tmp = self[i as usize];
+            self[i as usize] = self[j as usize];
+            self[j as usize] = tmp;
+            //self.swap(i as usize, j as usize);
           }
           i += 1;
           j -= 1;
@@ -51,12 +68,12 @@ impl<const N: usize> const ConstSortable for [u64; N] {
       }
       if j - low < high - i {
         if low < j {
-          self = Self::const_sort(self, low as usize, j as usize);
+          self = Self::const_copy_sort(self, low as usize, j as usize);
         }
         low = i;
       } else {
         if i < high {
-          self = Self::const_sort(self, i as usize, high as usize)
+          self = Self::const_copy_sort(self, i as usize, high as usize)
         }
         high = j;
       }
