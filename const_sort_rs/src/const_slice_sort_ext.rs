@@ -31,9 +31,9 @@ pub trait ConstSliceSortExt<T> {
   /// use const_sort_rs::ConstSliceSortExt;
   ///
   /// const V: [isize; 5] = {
-  ///   let mut x = [-5, 4, 1, -3, 2];
-  ///   x.const_sort_unstable();
-  ///   x
+  ///   let mut v = [-5, 4, 1, -3, 2];
+  ///   v.const_sort_unstable();
+  ///   v
   /// };
   /// assert_eq!(V, [-5, -3, 1, 2, 4])
   /// ```
