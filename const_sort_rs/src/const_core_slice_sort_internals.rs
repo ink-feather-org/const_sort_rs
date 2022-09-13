@@ -8,15 +8,75 @@
 
 // https://doc.rust-lang.org/src/core/slice/sort.rs.html
 
-use core::cmp;
+use core::cmp::{self, Ordering};
+use core::intrinsics::const_eval_select;
 use core::marker::Destruct;
 use core::mem::{self, MaybeUninit};
+use core::ops::{Index, IndexMut};
 use core::ptr;
 
 use crate::slice_const_split_at::ConstSplitAtExtensions;
 
+#[derive(Eq, Clone, Copy)]
+struct FakeUsizePtr(usize);
+impl FakeUsizePtr {
+  pub const fn null_mut() -> Self {
+    Self(0)
+  }
+  pub const fn offset(self, count: isize) -> Self {
+    Self(self.0.checked_add_signed(count).unwrap())
+  }
+  pub const fn add(self, count: usize) -> Self {
+    Self(self.0.checked_add(count).unwrap())
+  }
+  pub const fn sub(self, count: usize) -> Self {
+    Self(self.0.checked_sub(count).unwrap())
+  }
+  pub const fn addr(self) -> usize {
+    self.0
+  }
+}
+
+impl<T> const Index<FakeUsizePtr> for [T] {
+  type Output = T;
+
+  fn index(&self, index: FakeUsizePtr) -> &Self::Output {
+    &self[index.0]
+  }
+}
+
+impl<T> const IndexMut<FakeUsizePtr> for [T] {
+  fn index_mut(&mut self, index: FakeUsizePtr) -> &mut Self::Output {
+    &mut self[index.0]
+  }
+}
+
+impl const PartialEq for FakeUsizePtr {
+  fn eq(&self, other: &Self) -> bool {
+    self.0.eq(&other.0)
+  }
+}
+
+impl const PartialOrd for FakeUsizePtr {
+  fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+    self.0.partial_cmp(&other.0)
+  }
+}
+
+impl const Ord for FakeUsizePtr {
+  fn cmp(&self, other: &Self) -> Ordering {
+    self.0.cmp(&other.0)
+  }
+}
+
 pub trait ConstUnstableSortable {
+  /// Sorts `v` using heapsort, which guarantees *O*(*n* \* log(*n*)) worst-case.
+  ///
+  /// Constified version of `core::slice::heapsort`.
   fn const_heapsort(&mut self);
+  /// Sorts `v` using pattern-defeating quicksort, which is *O*(*n* \* log(*n*)) worst-case.
+  ///
+  /// Constified version of `core::slice::quicksort`.
   fn const_quicksort(&mut self);
 }
 
@@ -221,55 +281,54 @@ where
   }
 }
 
-/// This binary heap respects the invariant `parent >= child`.
-const fn sift_down<T, F>(v: &mut [T], mut node: usize, is_less: &mut F)
-where
-  F: ~const FnMut(&T, &T) -> bool,
-{
-  loop {
-    // Children of `node`.
-    let mut child = 2 * node + 1;
-    if child >= v.len() {
-      break;
-    }
-
-    // Choose the greater child.
-    if child + 1 < v.len() && is_less(&v[child], &v[child + 1]) {
-      child += 1;
-    }
-
-    // Stop if the invariant holds at `node`.
-    if !is_less(&v[node], &v[child]) {
-      break;
-    }
-
-    // Swap `node` with the greater child, move one step down, and continue sifting.
-    v.swap(node, child);
-    node = child;
-  }
-}
-
 /// Sorts `v` using heapsort, which guarantees *O*(*n* \* log(*n*)) worst-case.
 #[cold]
 pub const fn const_heapsort<T, F>(v: &mut [T], is_less: &mut F)
 where
-  F: ~const FnMut(&T, &T) -> bool + ~const Destruct,
+  F: ~const FnMut(&T, &T) -> bool,
 {
+  /// This binary heap respects the invariant `parent >= child`.
+  const fn sift_down<T, F>(v: &mut [T], mut node: usize, is_less: &mut F)
+  where
+    F: ~const FnMut(&T, &T) -> bool,
+  {
+    loop {
+      // Children of `node`.
+      let mut child = 2 * node + 1;
+      if child >= v.len() {
+        break;
+      }
+
+      // Choose the greater child.
+      if child + 1 < v.len() && is_less(&v[child], &v[child + 1]) {
+        child += 1;
+      }
+
+      // Stop if the invariant holds at `node`.
+      if !is_less(&v[node], &v[child]) {
+        break;
+      }
+
+      // Swap `node` with the greater child, move one step down, and continue sifting.
+      v.swap(node, child);
+      node = child;
+    }
+  }
   // Build the heap in linear time.
-  //for i in (0..v.len() / 2).rev() {
-  let mut i = isize::try_from(v.len() / 2 - 1).ok().unwrap();
-  while i >= 0 {
-    sift_down(v, i as usize, is_less);
+  // for i in (0..v.len() / 2).rev() {
+  let mut i = v.len() / 2;
+  while i > 0 {
     i -= 1;
+    sift_down(v, i, is_less);
   }
 
   // Pop maximal elements from the heap.
   // for i in (1..v.len()).rev() {
-  let mut i = v.len() - 1;
-  while i >= 1 {
+  let mut i = v.len();
+  while i > 1 {
+    i -= 1;
     v.swap(0, i);
     sift_down(&mut v[..i], 0, is_less);
-    i -= 1;
   }
 }
 
@@ -303,26 +362,26 @@ where
   // 4. `offsets - Indices of out-of-order elements within the block.
 
   // The current block on the left side (from `l` to `l.add(block_l)`).
-  let mut l = 0;
+  let mut l = FakeUsizePtr::null_mut(); // indexes v
   let mut block_l = BLOCK;
-  let mut start_l = 0; // indexes offsets_l
-  let mut end_l = 0; // holds end of offsets_l
+  let mut start_l = FakeUsizePtr::null_mut(); // indexes offsets_l
+  let mut end_l = FakeUsizePtr::null_mut(); // holds end of offsets_l
   let mut offsets_l = [MaybeUninit::<u8>::uninit(); BLOCK];
 
   // The current block on the right side (from `r.sub(block_r)` to `r`).
   // SAFETY: The documentation for .add() specifically mention that `vec.as_ptr().add(vec.len())` is always safe`
-  let mut r = l + v.len();
+  let mut r = l.add(v.len()); // indexes v
   let mut block_r = BLOCK;
-  let mut start_r = 0; // indexes offsets_r
-  let mut end_r = 0; // holds end of offsets_r
+  let mut start_r = FakeUsizePtr::null_mut(); // indexes offsets_r
+  let mut end_r = FakeUsizePtr::null_mut(); // holds end of offsets_r
   let mut offsets_r = [MaybeUninit::<u8>::uninit(); BLOCK];
 
   // FIXME: When we get VLAs, try creating one array of length `min(v.len(), 2 * BLOCK)` rather
   // than two fixed-size arrays of length `BLOCK`. VLAs might be more cache-efficient.
 
   // Returns the number of elements between pointers `l` (inclusive) and `r` (exclusive).
-  const fn width(l: usize, r: usize) -> usize {
-    r - l
+  const fn width(l: FakeUsizePtr, r: FakeUsizePtr) -> usize {
+    r.addr() - l.addr()
   }
 
   loop {
@@ -356,7 +415,7 @@ where
 
     if start_l == end_l {
       // Trace `block_l` elements from the left side.
-      start_l = 0;
+      start_l = FakeUsizePtr::null_mut();
       end_l = start_l;
       let mut elem = l;
 
@@ -374,12 +433,10 @@ where
         //        Another unsafe operation here is dereferencing `elem`.
         //        However, `elem` was initially the begin pointer to the slice which is always valid.
         {
-          // branchless comparison.
+          // Branchless comparison.
           offsets_l[end_l].write(i as u8);
-          end_l = end_l
-            .checked_add_signed(!is_less(&v[elem], pivot) as isize)
-            .unwrap();
-          elem = elem + 1;
+          end_l = end_l.add(!is_less(&v[elem], pivot) as usize);
+          elem = elem.add(1);
         }
         i += 1;
       }
@@ -387,7 +444,7 @@ where
 
     if start_r == end_r {
       // Trace `block_r` elements from the right side.
-      start_r = 0;
+      start_r = FakeUsizePtr::null_mut();
       end_r = start_r;
       let mut elem = r;
 
@@ -406,12 +463,10 @@ where
         //        However, `elem` was initially `1 * sizeof(T)` past the end and we decrement it by `1 * sizeof(T)` before accessing it.
         //        Plus, `block_r` was asserted to be less than `BLOCK` and `elem` will therefore at most be pointing to the beginning of the slice.
         {
-          // branchless comparison.
-          elem = elem - 1;
+          // Branchless comparison.
+          elem = elem.sub(1);
           offsets_r[end_r].write(i as u8);
-          end_r = end_r
-            .checked_add_signed(is_less(&v[elem], pivot) as isize)
-            .unwrap();
+          end_r = end_r.add(is_less(&v[elem], pivot) as usize);
         }
         i += 1;
       }
@@ -423,14 +478,12 @@ where
     if count > 0 {
       macro_rules! left {
         () => {
-          l.checked_add_signed(offsets_l[start_l].assume_init() as isize)
-            .unwrap()
+          &mut v[l.add(usize::from(offsets_l[start_l].assume_init()))]
         };
       }
       macro_rules! right {
         () => {
-          r.checked_add_signed(-(offsets_r[start_r].assume_init() as isize) - 1)
-            .unwrap()
+          &mut v[r.sub(usize::from(offsets_r[start_r].assume_init()) + 1)]
         };
       }
 
@@ -454,23 +507,23 @@ where
       // The calls to `copy_nonoverlapping` are safe because `left!` and `right!` are guaranteed
       // not to overlap, and are valid because of the reasoning above.
       unsafe {
-        let tmp = ptr::read(v.as_mut_ptr().add(left!()));
-        ptr::copy_nonoverlapping(&mut v[right!()], &mut v[left!()], 1);
+        let tmp = ptr::read(left!());
+        ptr::copy_nonoverlapping(right!(), left!(), 1);
 
         // for _ in 1..count {
         let mut oi = 1;
         while oi < count {
-          start_l = start_l + 1;
-          ptr::copy_nonoverlapping(&mut v[left!()], &mut v[right!()], 1);
-          start_r = start_r + 1;
-          ptr::copy_nonoverlapping(&mut v[right!()], &mut v[left!()], 1);
+          start_l = start_l.add(1);
+          ptr::copy_nonoverlapping(left!(), right!(), 1);
+          start_r = start_r.add(1);
+          ptr::copy_nonoverlapping(right!(), left!(), 1);
           oi += 1;
         }
 
-        ptr::copy_nonoverlapping(&tmp, &mut v[right!()], 1);
+        ptr::copy_nonoverlapping(&tmp, right!(), 1);
         mem::forget(tmp);
-        start_l = start_l + 1;
-        start_r = start_r + 1;
+        start_l = start_l.add(1);
+        start_r = start_r.add(1);
       }
     }
 
@@ -483,7 +536,7 @@ where
       // safe. Otherwise, the debug assertions in the `is_done` case guarantee that
       // `width(l, r) == block_l + block_r`, namely, that the block sizes have been adjusted to account
       // for the smaller number of remaining elements.
-      l = l + block_l;
+      l = l.add(block_l);
     }
 
     if start_r == end_r {
@@ -491,7 +544,7 @@ where
 
       // SAFETY: Same argument as [block-width-guarantee]. Either this is a full block `2*BLOCK`-wide,
       // or `block_r` has been adjusted for the last handful of elements.
-      r = r.checked_add_signed(-(block_r as isize)).unwrap();
+      r = r.sub(block_r);
     }
 
     if is_done {
@@ -506,7 +559,7 @@ where
   if start_l < end_l {
     // The left block remains.
     // Move its remaining out-of-order elements to the far right.
-    // debug_assert_eq!(width(l, r), block_l);
+    debug_assert!(width(l, r) == block_l);
     while start_l < end_l {
       // remaining-elements-safety
       // SAFETY: while the loop condition holds there are still elements in `offsets_l`, so it
@@ -520,32 +573,35 @@ where
       //  - `offsets_l` contains valid offsets into `v` collected during the partitioning of
       //    the last block, so the `l.offset` calls are valid.
       unsafe {
-        end_l = end_l - 1;
-        v.swap(l + offsets_l[end_l].assume_init() as usize, r - 1);
-        r = r - 1;
+        end_l = end_l.sub(1);
+        v.swap(
+          l.add(usize::from(offsets_l[end_l].assume_init())).addr(),
+          r.sub(1).addr(),
+        );
+        r = r.sub(1);
       }
     }
-    width(0, r)
+    width(FakeUsizePtr::null_mut(), r)
   } else if start_r < end_r {
     // The right block remains.
     // Move its remaining out-of-order elements to the far left.
-    // debug_assert_eq!(width(l, r), block_r);
+    debug_assert!(width(l, r) == block_r);
     while start_r < end_r {
       // SAFETY: See the reasoning in [remaining-elements-safety].
       unsafe {
-        end_r = end_r - 1;
+        end_r = end_r.sub(1);
         v.swap(
-          l,
-          r.checked_add_signed(-(offsets_r[end_r].assume_init() as isize) - 1)
-            .unwrap(),
+          l.addr(),
+          r.sub(usize::from(offsets_r[end_r].assume_init()) + 1)
+            .addr(),
         );
-        l = l + 1;
+        l = l.add(1);
       }
     }
-    width(0, l)
+    width(FakeUsizePtr::null_mut(), l)
   } else {
     // Nothing else to do, we're done.
-    width(0, l)
+    width(FakeUsizePtr::null_mut(), l)
   }
 }
 
@@ -563,7 +619,7 @@ where
   let (mid, was_partitioned) = {
     // Place the pivot at the beginning of slice.
     v.swap(0, pivot);
-    let (pivot, v) = unsafe { ConstSplitAtExtensions::split_at_mut_unchecked(v, 1) };
+    let (pivot, v) = unsafe { v.const_split_at_mut_unchecked(1) };
     let pivot = &mut pivot[0];
 
     // Read the pivot into a stack-allocated variable for efficiency. If a following comparison
@@ -623,7 +679,7 @@ where
 {
   // Place the pivot at the beginning of slice.
   v.swap(0, pivot);
-  let (pivot, v) = unsafe { ConstSplitAtExtensions::split_at_mut_unchecked(v, 1) };
+  let (pivot, v) = unsafe { v.const_split_at_mut_unchecked(1) };
   let pivot = &mut pivot[0];
 
   // Read the pivot into a stack-allocated variable for efficiency. If a following comparison
@@ -896,8 +952,8 @@ const fn recurse<'a, 'b, T, F>(
     was_partitioned = was_p;
 
     // Split the slice into `left`, `pivot`, and `right`.
-    let (left, right) = unsafe { ConstSplitAtExtensions::split_at_mut_unchecked(v, mid) };
-    let (pivot, right) = unsafe { ConstSplitAtExtensions::split_at_mut_unchecked(right, 1) };
+    let (left, right) = unsafe { v.const_split_at_mut_unchecked(mid) };
+    let (pivot, right) = unsafe { right.const_split_at_mut_unchecked(1) };
     let pivot = &pivot[0];
 
     // Recurse into the shorter side only in order to minimize the total number of recursive
@@ -972,8 +1028,8 @@ const fn partition_at_index_loop<'a, T, F>(
     let (mid, _) = partition(v, pivot, is_less);
 
     // Split the slice into `left`, `pivot`, and `right`.
-    let (left, right) = ConstSplitAtExtensions::split_at_mut(v, mid);
-    let (pivot, right) = ConstSplitAtExtensions::split_at_mut(right, 1);
+    let (left, right) = v.const_split_at_mut(mid);
+    let (pivot, right) = right.const_split_at_mut(1);
     let pivot = &pivot[0];
 
     if mid < index {
@@ -999,12 +1055,16 @@ where
   F: ~const FnMut(&T, &T) -> bool + ~const Destruct,
 {
   if index >= v.len() {
-    /* panic!(
-      "partition_at_index index {} greater than length of slice {}",
-      index,
-      v.len()
-    ); */
-    panic!("partition_at_index index ? greater than length of slice ?")
+    const fn const_panic(_index: usize, _len: usize) {
+      panic!("partition_at_index index ? greater than length of slice ?")
+    }
+    fn rt_panic(index: usize, len: usize) {
+      panic!(
+        "partition_at_index index {} greater than length of slice {}",
+        index, len
+      )
+    }
+    unsafe { const_eval_select((index, v.len()), const_panic, rt_panic) }
   }
 
   if mem::size_of::<T>() == 0 {
@@ -1037,8 +1097,8 @@ where
     partition_at_index_loop(v, index, &mut is_less, None);
   }
 
-  let (left, right) = unsafe { ConstSplitAtExtensions::split_at_mut_unchecked(v, index) };
-  let (pivot, right) = unsafe { ConstSplitAtExtensions::split_at_mut_unchecked(right, 1) };
+  let (left, right) = v.const_split_at_mut(index);
+  let (pivot, right) = right.const_split_at_mut(1);
   let pivot = &mut pivot[0];
   (left, pivot, right)
 }

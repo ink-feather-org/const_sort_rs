@@ -25,7 +25,7 @@ pub(crate) trait ConstSplitAtExtensions<T> {
   /// assert_eq!(v, [1, 2, 3, 4, 5, 6]);
   /// ```
   #[must_use]
-  fn split_at_mut(&mut self, mid: usize) -> (&mut [T], &mut [T]);
+  fn const_split_at_mut(&mut self, mid: usize) -> (&mut [T], &mut [T]);
   /// Divides one mutable slice into two at an index, without doing bounds checking.
   ///
   /// The first will contain all indices from `[0, mid)` (excluding
@@ -60,21 +60,21 @@ pub(crate) trait ConstSplitAtExtensions<T> {
   /// assert_eq!(v, [1, 2, 3, 4, 5, 6]);
   /// ```
   #[must_use]
-  unsafe fn split_at_mut_unchecked(&mut self, mid: usize) -> (&mut [T], &mut [T]);
+  unsafe fn const_split_at_mut_unchecked(&mut self, mid: usize) -> (&mut [T], &mut [T]);
 }
 
 impl<T> const ConstSplitAtExtensions<T> for [T] {
   #[inline]
   #[track_caller]
-  fn split_at_mut(&mut self, mid: usize) -> (&mut [T], &mut [T]) {
+  fn const_split_at_mut(&mut self, mid: usize) -> (&mut [T], &mut [T]) {
     assert!(mid <= self.len());
     // SAFETY: `[ptr; mid]` and `[mid; len]` are inside `self`, which
     // fulfills the requirements of `from_raw_parts_mut`.
-    unsafe { ConstSplitAtExtensions::split_at_mut_unchecked(self, mid) }
+    unsafe { ConstSplitAtExtensions::const_split_at_mut_unchecked(self, mid) }
   }
 
   #[inline]
-  unsafe fn split_at_mut_unchecked(&mut self, mid: usize) -> (&mut [T], &mut [T]) {
+  unsafe fn const_split_at_mut_unchecked(&mut self, mid: usize) -> (&mut [T], &mut [T]) {
     let len = self.len();
     let ptr = self.as_mut_ptr();
 

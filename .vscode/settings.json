@@ -2,6 +2,7 @@
     "cSpell.diagnosticLevel": "Information",
     "cSpell.words": [
         "branchless",
+        "Constified",
         "elem",
         "heapsort",
         "libcore",

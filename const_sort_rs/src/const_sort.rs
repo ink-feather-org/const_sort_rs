@@ -28,7 +28,7 @@ const fn partition<T: ~const PartialOrd + Ord>(inp: &mut [T]) -> (&mut [T], &mut
     }
   }
   // SAFETY: since i, j and p are always in bound this is safe.
-  unsafe { ConstSplitAtExtensions::split_at_mut_unchecked(inp, p) }
+  unsafe { inp.const_split_at_mut_unchecked(p) }
 }
 
 impl<T: ~const PartialOrd + Ord> const SliceConstUnstableSortable for [T] {

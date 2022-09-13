@@ -22,6 +22,8 @@
 #![feature(const_reverse)] // const_sort_core
 #![feature(mixed_integer_ops)] // const_sort_core
 #![feature(const_maybe_uninit_write)] // const_sort_core
+#![feature(core_intrinsics)] // const_sort_core
+#![feature(const_eval_select)] // const_sort_core
 #![feature(is_sorted)] // For tests
 
 mod const_sort;
