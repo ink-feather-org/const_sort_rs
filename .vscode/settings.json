@@ -1,14 +1,18 @@
 {
     "cSpell.diagnosticLevel": "Information",
     "cSpell.words": [
+        "behaviour",
         "branchless",
         "Constified",
         "elem",
         "heapsort",
+        "intrinsics",
         "libcore",
         "Marsaglia",
         "mut_refs",
+        "neighbourhoods",
         "nonoverlapping",
+        "pdqsort",
         "pred",
         "refs",
         "Seedable",

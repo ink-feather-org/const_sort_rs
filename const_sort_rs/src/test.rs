@@ -14,7 +14,7 @@ fn gen_array(n: usize) -> Vec<u32> {
 fn const_core_slice_heapsort() {
   const ARR: [u8; 4] = {
     let mut v = [2, 3, 5, 4];
-    const_heapsort(&mut v, &mut const_pred_lt);
+    const_heapsort(&mut v, const_pred_lt);
     v
   };
   assert_eq!(&ARR, &[2, 3, 4, 5])
@@ -22,7 +22,7 @@ fn const_core_slice_heapsort() {
 #[test]
 fn const_core_slice_heapsort_rng() {
   let mut v = gen_array(RAND_CNT);
-  const_heapsort(&mut v, &mut const_pred_lt);
+  const_heapsort(&mut v, const_pred_lt);
   assert!(v.is_sorted())
 }
 

@@ -14,6 +14,8 @@ use core::marker::Destruct;
 use core::mem::{self, MaybeUninit};
 use core::ptr;
 
+use const_closure::const_closure;
+
 use crate::fake_usize_ptr::FakeUsizePtr;
 use crate::slice_const_split_at::ConstSplitAtExtensions;
 
@@ -213,14 +215,14 @@ where
 /// Note: The public api of this function had to be adapted. `is_less` now takes a mut ref.
 ///       This will be changed back once `const_fn_traits` lands.
 #[cold]
-pub const fn const_heapsort<T, F>(v: &mut [T], is_less: &mut F)
+pub const fn const_heapsort<T, F>(v: &mut [T], mut is_less: F)
 where
-  F: ~const FnMut(&T, &T) -> bool,
+  F: ~const FnMut(&T, &T) -> bool + ~const Destruct,
 {
   /// This binary heap respects the invariant `parent >= child`.
   const fn sift_down<T, F>(v: &mut [T], mut node: usize, is_less: &mut F)
   where
-    F: ~const FnMut(&T, &T) -> bool,
+    F: ~const FnMut(&T, &T) -> bool + ~const Destruct,
   {
     loop {
       // Children of `node`.
@@ -249,7 +251,7 @@ where
   let mut i = v.len() / 2;
   while i > 0 {
     i -= 1;
-    sift_down(v, i, is_less);
+    sift_down(v, i, &mut is_less);
   }
 
   // Pop maximal elements from the heap.
@@ -258,7 +260,7 @@ where
   while i > 1 {
     i -= 1;
     v.swap(0, i);
-    sift_down(&mut v[..i], 0, is_less);
+    sift_down(&mut v[..i], 0, &mut is_less);
   }
 }
 
@@ -839,7 +841,11 @@ const fn recurse<'a, T, F>(
     // If too many bad pivot choices were made, simply fall back to heapsort in order to
     // guarantee `O(n * log(n))` worst-case.
     if limit == 0 {
-      const_heapsort(v, is_less);
+      let mut is_less = is_less;
+      const_heapsort(
+        v,
+        const_closure!(FnMut for<T, F: FnMut(&T, &T) -> bool> [is_less: &'a mut F] (a: &T, b: &T) -> bool {(*is_less)(a,b)}),
+      );
       return;
     }
 
