@@ -11,7 +11,7 @@ description = "Rust sort algos in const items."
 homepage = "https://github.com/raldone01/const_sort_rs"
 repository = "https://github.com/raldone01/const_sort_rs"
 categories = ["no-std", "rust-patterns"]
-keywords = ["sort", "const", "nightly"]
+keywords = ["sort", "const", "nightly", "sort_interals"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dev-dependencies]

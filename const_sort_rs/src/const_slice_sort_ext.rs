@@ -3,7 +3,7 @@ use core::{
   marker::{Destruct, PhantomData},
 };
 
-use crate::const_quicksort;
+use crate::const_sort;
 
 /// Trait for sorting slices in const items.
 pub trait ConstSliceSortExt<T> {
@@ -39,7 +39,9 @@ pub trait ConstSliceSortExt<T> {
   /// ```
   ///
   /// [pdqsort]: https://github.com/orlp/pdqsort
-  fn const_sort_unstable(&mut self);
+  fn const_sort_unstable(&mut self)
+  where
+    T: Ord;
   /// Sorts the slice with a comparator function, but might not preserve the order of equal
   /// elements.
   ///
@@ -57,6 +59,8 @@ pub trait ConstSliceSortExt<T> {
   /// `partial_cmp` as our sort function when we know the slice doesn't contain a `NaN`.
   ///
   /// ```
+  /// use const_sort_rs::ConstSliceSortExt;
+  ///
   /// let mut floats = [5f64, 4.0, 1.0, 3.0, 2.0];
   /// floats.const_sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
   /// assert_eq!(floats, [1.0, 2.0, 3.0, 4.0, 5.0]);
@@ -76,6 +80,8 @@ pub trait ConstSliceSortExt<T> {
   /// # Examples
   ///
   /// ```
+  /// use const_sort_rs::ConstSliceSortExt;
+  ///
   /// let mut v = [5, 4, 1, 3, 2];
   /// v.const_sort_unstable_by(|a, b| a.cmp(b));
   /// assert!(v == [1, 2, 3, 4, 5]);
@@ -88,7 +94,7 @@ pub trait ConstSliceSortExt<T> {
   /// [pdqsort]: https://github.com/orlp/pdqsort
   fn const_sort_unstable_by<F>(&mut self, compare: F)
   where
-    F: ~const FnMut(&T, &T) -> Ordering + ~const Destruct;
+    F: FnMut(&T, &T) -> Ordering;
   /// Sorts the slice with a key extraction function, but might not preserve the order of equal
   /// elements.
   ///
@@ -111,34 +117,39 @@ pub trait ConstSliceSortExt<T> {
   /// # Examples
   ///
   /// ```
+  /// use const_sort_rs::ConstSliceSortExt;
+  ///
   /// let mut v = [-5i32, 4, 1, -3, 2];
   ///
-  /// v.sort_unstable_by_key(|k| k.abs());
+  /// v.const_sort_unstable_by_key(|k| k.abs());
   /// assert!(v == [1, 2, -3, 4, -5]);
   /// ```
   ///
   /// [pdqsort]: https://github.com/orlp/pdqsort
-  fn sort_unstable_by_key<K, F>(&mut self, f: F)
+  fn const_sort_unstable_by_key<K, F>(&mut self, f: F)
   where
-    F: ~const FnMut(&T) -> K + ~const Destruct,
-    K: Ord + ~const PartialOrd + ~const Destruct;
+    F: FnMut(&T) -> K,
+    K: Ord;
 }
 
 pub(crate) const fn const_pred_lt<T: Ord + ~const PartialOrd>(a: &T, b: &T) -> bool {
   a.lt(b)
 }
 
-impl<T: Ord + ~const PartialOrd> const ConstSliceSortExt<T> for [T] {
+impl<T: ~const PartialOrd> const ConstSliceSortExt<T> for [T] {
   #[inline]
-  fn const_sort_unstable(&mut self) {
-    const_quicksort(self, const_pred_lt);
+  fn const_sort_unstable(&mut self)
+  where
+    T: Ord,
+  {
+    const_sort::const_quicksort(self, const_pred_lt);
   }
   #[inline]
   fn const_sort_unstable_by<F>(&mut self, compare: F)
   where
     F: ~const FnMut(&T, &T) -> Ordering + ~const Destruct,
   {
-    // const_quicksort(self, |a, b| compare(a, b) == Ordering::Less);
+    // sort::const_quicksort(self, |a, b| compare(a, b) == Ordering::Less);
     struct ClosureHelperBy<F, T>
     where
       F: FnMut(&T, &T) -> Ordering,
@@ -167,7 +178,7 @@ impl<T: Ord + ~const PartialOrd> const ConstSliceSortExt<T> for [T] {
         matches!((self.compare_fn)(a, b), Ordering::Less)
       }
     }
-    const_quicksort(
+    const_sort::const_quicksort(
       self,
       ClosureHelperBy {
         compare_fn: compare,
@@ -176,7 +187,7 @@ impl<T: Ord + ~const PartialOrd> const ConstSliceSortExt<T> for [T] {
     );
   }
   #[inline]
-  fn sort_unstable_by_key<K, F>(&mut self, f: F)
+  fn const_sort_unstable_by_key<K, F>(&mut self, f: F)
   where
     F: ~const FnMut(&T) -> K + ~const Destruct,
     K: Ord + ~const PartialOrd + ~const Destruct,
@@ -212,7 +223,7 @@ impl<T: Ord + ~const PartialOrd> const ConstSliceSortExt<T> for [T] {
         (self.by_key_fn)(a).lt(&(self.by_key_fn)(b))
       }
     }
-    const_quicksort(
+    const_sort::const_quicksort(
       self,
       ClosureHelperByKey {
         by_key_fn: f,
