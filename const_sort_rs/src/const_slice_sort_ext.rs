@@ -1,7 +1,6 @@
-use core::{
-  cmp::Ordering,
-  marker::{Destruct, PhantomData},
-};
+use core::{cmp::Ordering, marker::Destruct};
+
+use const_closure::const_closure;
 
 use crate::const_sort;
 
@@ -187,91 +186,30 @@ impl<T: ~const PartialOrd> const ConstSliceSortExt<T> for [T] {
     const_sort::const_quicksort(self, const_pred_lt);
   }
   #[inline]
-  fn const_sort_unstable_by<F>(&mut self, compare: F)
+  fn const_sort_unstable_by<F>(&mut self, mut compare: F)
   where
     F: ~const FnMut(&T, &T) -> Ordering + ~const Destruct,
   {
     // sort::const_quicksort(self, |a, b| compare(a, b) == Ordering::Less);
-    struct ClosureHelperBy<F, T>
-    where
-      F: FnMut(&T, &T) -> Ordering,
-    {
-      compare_fn: F,
-      _t: PhantomData<*const T>,
-    }
-
-    impl<F, T> const FnOnce<(&T, &T)> for ClosureHelperBy<F, T>
-    where
-      F: ~const FnMut(&T, &T) -> Ordering,
-      Self: ~const Destruct,
-    {
-      type Output = bool;
-
-      extern "rust-call" fn call_once(mut self, args: (&T, &T)) -> Self::Output {
-        self.call_mut(args)
-      }
-    }
-
-    impl<F, T> const FnMut<(&T, &T)> for ClosureHelperBy<F, T>
-    where
-      F: ~const FnMut(&T, &T) -> Ordering,
-    {
-      extern "rust-call" fn call_mut(&mut self, (a, b): (&T, &T)) -> Self::Output {
-        matches!((self.compare_fn)(a, b), Ordering::Less)
-      }
-    }
     const_sort::const_quicksort(
       self,
-      ClosureHelperBy {
-        compare_fn: compare,
-        _t: PhantomData,
-      },
+      const_closure!(FnMut for<T, F: FnMut(&T, &T) -> Ordering> [compare: F]
+        (a:&T, b: &T) -> bool {
+          matches!(compare(a, b), Ordering::Less)
+      }),
     );
   }
   #[inline]
-  fn const_sort_unstable_by_key<K, F>(&mut self, f: F)
+  fn const_sort_unstable_by_key<K, F>(&mut self, mut f: F)
   where
     F: ~const FnMut(&T) -> K + ~const Destruct,
     K: Ord + ~const PartialOrd + ~const Destruct,
   {
-    struct ClosureHelperByKey<F, T, K: Ord>
-    where
-      F: ~const FnMut(&T) -> K,
-    {
-      by_key_fn: F,
-      _t: PhantomData<*const T>,
-      _k: PhantomData<*const K>,
-    }
-
-    impl<F, T, K: Ord + ~const PartialOrd + ~const Destruct> const FnOnce<(&T, &T)>
-      for ClosureHelperByKey<F, T, K>
-    where
-      F: ~const FnMut(&T) -> K,
-      Self: ~const Destruct,
-    {
-      type Output = bool;
-
-      extern "rust-call" fn call_once(mut self, args: (&T, &T)) -> Self::Output {
-        self.call_mut(args)
-      }
-    }
-
-    impl<F, T, K: Ord + ~const PartialOrd + ~const Destruct> const FnMut<(&T, &T)>
-      for ClosureHelperByKey<F, T, K>
-    where
-      F: ~const FnMut(&T) -> K,
-    {
-      extern "rust-call" fn call_mut(&mut self, (a, b): (&T, &T)) -> Self::Output {
-        (self.by_key_fn)(a).lt(&(self.by_key_fn)(b))
-      }
-    }
     const_sort::const_quicksort(
       self,
-      ClosureHelperByKey {
-        by_key_fn: f,
-        _k: PhantomData,
-        _t: PhantomData,
-      },
+      const_closure!(FnMut for<T, K: PartialOrd, F: FnMut(&T) -> K> [f: F] (a:&T, b:&T) -> bool {
+        f(a).lt(&f(b))
+      }),
     );
   }
 }
