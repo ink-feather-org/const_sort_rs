@@ -27,7 +27,7 @@
 mod const_sort;
 pub use const_sort::*;
 
-pub(crate) mod utils;
+pub(crate) mod slice_const_split_at;
 
 mod const_sort_core;
 pub use const_sort_core::*;

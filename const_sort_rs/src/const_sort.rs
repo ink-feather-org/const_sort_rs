@@ -1,4 +1,4 @@
-use crate::utils::split_at_mut_unchecked;
+use crate::slice_const_split_at::ConstSplitAtExtensions;
 /// Trait for sorting slices in a const context
 pub trait SliceConstUnstableSortable {
   /// Sort the slice
@@ -28,7 +28,7 @@ const fn partition<T: ~const PartialOrd + Ord>(inp: &mut [T]) -> (&mut [T], &mut
     }
   }
   // SAFETY: since i, j and p are always in bound this is safe.
-  unsafe { split_at_mut_unchecked(inp, p) }
+  unsafe { ConstSplitAtExtensions::split_at_mut_unchecked(inp, p) }
 }
 
 impl<T: ~const PartialOrd + Ord> const SliceConstUnstableSortable for [T] {

@@ -13,7 +13,7 @@ use core::marker::Destruct;
 use core::mem::{self, MaybeUninit};
 use core::ptr;
 
-use crate::utils::split_at_mut_unchecked;
+use crate::slice_const_split_at::ConstSplitAtExtensions;
 
 pub trait ConstUnstableSortable {
   fn const_heapsort(&mut self);
@@ -563,7 +563,7 @@ where
   let (mid, was_partitioned) = {
     // Place the pivot at the beginning of slice.
     v.swap(0, pivot);
-    let (pivot, v) = unsafe { split_at_mut_unchecked(v, 1) };
+    let (pivot, v) = unsafe { ConstSplitAtExtensions::split_at_mut_unchecked(v, 1) };
     let pivot = &mut pivot[0];
 
     // Read the pivot into a stack-allocated variable for efficiency. If a following comparison
@@ -623,7 +623,7 @@ where
 {
   // Place the pivot at the beginning of slice.
   v.swap(0, pivot);
-  let (pivot, v) = unsafe { split_at_mut_unchecked(v, 1) };
+  let (pivot, v) = unsafe { ConstSplitAtExtensions::split_at_mut_unchecked(v, 1) };
   let pivot = &mut pivot[0];
 
   // Read the pivot into a stack-allocated variable for efficiency. If a following comparison
@@ -896,8 +896,8 @@ const fn recurse<'a, 'b, T, F>(
     was_partitioned = was_p;
 
     // Split the slice into `left`, `pivot`, and `right`.
-    let (left, right) = unsafe { split_at_mut_unchecked(v, mid) };
-    let (pivot, right) = unsafe { split_at_mut_unchecked(right, 1) };
+    let (left, right) = unsafe { ConstSplitAtExtensions::split_at_mut_unchecked(v, mid) };
+    let (pivot, right) = unsafe { ConstSplitAtExtensions::split_at_mut_unchecked(right, 1) };
     let pivot = &pivot[0];
 
     // Recurse into the shorter side only in order to minimize the total number of recursive
@@ -928,4 +928,117 @@ where
   let limit = usize::BITS - v.len().leading_zeros();
 
   recurse(v, &mut is_less, None, limit);
+}
+
+const fn partition_at_index_loop<'a, T, F>(
+  mut v: &'a mut [T],
+  mut index: usize,
+  is_less: &mut F,
+  mut pred: Option<&'a T>,
+) where
+  F: ~const FnMut(&T, &T) -> bool,
+{
+  loop {
+    // For slices of up to this length it's probably faster to simply sort them.
+    const MAX_INSERTION: usize = 10;
+    if v.len() <= MAX_INSERTION {
+      insertion_sort(v, is_less);
+      return;
+    }
+
+    // Choose a pivot
+    let (pivot, _) = choose_pivot(v, is_less);
+
+    // If the chosen pivot is equal to the predecessor, then it's the smallest element in the
+    // slice. Partition the slice into elements equal to and elements greater than the pivot.
+    // This case is usually hit when the slice contains many duplicate elements.
+    if let Some(p) = pred {
+      if !is_less(p, &v[pivot]) {
+        let mid = partition_equal(v, pivot, is_less);
+
+        // If we've passed our index, then we're good.
+        if mid > index {
+          return;
+        }
+
+        // Otherwise, continue sorting elements greater than the pivot.
+        v = &mut v[mid..];
+        index = index - mid;
+        pred = None;
+        continue;
+      }
+    }
+
+    let (mid, _) = partition(v, pivot, is_less);
+
+    // Split the slice into `left`, `pivot`, and `right`.
+    let (left, right) = ConstSplitAtExtensions::split_at_mut(v, mid);
+    let (pivot, right) = ConstSplitAtExtensions::split_at_mut(right, 1);
+    let pivot = &pivot[0];
+
+    if mid < index {
+      v = right;
+      index = index - mid - 1;
+      pred = Some(pivot);
+    } else if mid > index {
+      v = left;
+    } else {
+      // If mid == index, then we're done, since partition() guaranteed that all elements
+      // after mid are greater than or equal to mid.
+      return;
+    }
+  }
+}
+
+pub const fn partition_at_index<T, F>(
+  v: &mut [T],
+  index: usize,
+  mut is_less: F,
+) -> (&mut [T], &mut T, &mut [T])
+where
+  F: ~const FnMut(&T, &T) -> bool + ~const Destruct,
+{
+  if index >= v.len() {
+    /* panic!(
+      "partition_at_index index {} greater than length of slice {}",
+      index,
+      v.len()
+    ); */
+    panic!("partition_at_index index ? greater than length of slice ?")
+  }
+
+  if mem::size_of::<T>() == 0 {
+    // Sorting has no meaningful behaviour on zero-sized types. Do nothing.
+  } else if index == v.len() - 1 {
+    // Find max element and place it in the last position of the array. We're free to use
+    // `unwrap()` here because we know v must not be empty.
+    let mut max_index = 0;
+    let mut i = 0;
+    while i < v.len() {
+      if is_less(&v[max_index], &v[i]) {
+        max_index = i;
+      }
+      i += 1;
+    }
+    v.swap(max_index, index);
+  } else if index == 0 {
+    // Find min element and place it in the first position of the array. We're free to use
+    // `unwrap()` here because we know v must not be empty.
+    let mut min_index = 0;
+    let mut i = 0;
+    while i < v.len() {
+      if is_less(&v[i], &v[min_index]) {
+        min_index = i;
+      }
+      i += 1;
+    }
+    v.swap(min_index, index);
+  } else {
+    partition_at_index_loop(v, index, &mut is_less, None);
+  }
+
+  let (left, right) = unsafe { ConstSplitAtExtensions::split_at_mut_unchecked(v, index) };
+  let (pivot, right) = unsafe { ConstSplitAtExtensions::split_at_mut_unchecked(right, 1) };
+  let pivot = &mut pivot[0];
+  (left, pivot, right)
 }

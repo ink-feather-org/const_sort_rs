@@ -3,6 +3,7 @@ use alloc::vec::Vec;
 use rand::{prelude::StdRng, Rng, SeedableRng};
 const RAND_CNT: usize = 10_000;
 pub use super::*;
+
 fn gen_array(n: usize) -> Vec<u32> {
   let mut rng = StdRng::seed_from_u64(69420);
   (0..n).map(|_| rng.gen()).collect()
