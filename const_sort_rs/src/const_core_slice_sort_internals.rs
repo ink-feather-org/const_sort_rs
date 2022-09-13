@@ -282,6 +282,9 @@ where
 }
 
 /// Sorts `v` using heapsort, which guarantees *O*(*n* \* log(*n*)) worst-case.
+///
+/// Note: The public api of this function had to be adapted. `is_less` now takes a mut ref.
+///       This will be changed back once `const_fn_traits` lands.
 #[cold]
 pub const fn const_heapsort<T, F>(v: &mut [T], is_less: &mut F)
 where
@@ -619,7 +622,7 @@ where
   let (mid, was_partitioned) = {
     // Place the pivot at the beginning of slice.
     v.swap(0, pivot);
-    let (pivot, v) = unsafe { v.const_split_at_mut_unchecked(1) };
+    let (pivot, v) = v.const_split_at_mut(1);
     let pivot = &mut pivot[0];
 
     // Read the pivot into a stack-allocated variable for efficiency. If a following comparison
@@ -679,7 +682,7 @@ where
 {
   // Place the pivot at the beginning of slice.
   v.swap(0, pivot);
-  let (pivot, v) = unsafe { v.const_split_at_mut_unchecked(1) };
+  let (pivot, v) = v.const_split_at_mut(1);
   let pivot = &mut pivot[0];
 
   // Read the pivot into a stack-allocated variable for efficiency. If a following comparison
@@ -881,9 +884,9 @@ where
 ///
 /// `limit` is the number of allowed imbalanced partitions before switching to `heapsort`. If zero,
 /// this function will immediately switch to heapsort.
-const fn recurse<'a, 'b, T, F>(
+const fn recurse<'a, T, F>(
   mut v: &'a mut [T],
-  is_less: &'b mut F,
+  is_less: &mut F,
   mut pred: Option<&'a T>,
   mut limit: u32,
 ) where
@@ -952,8 +955,8 @@ const fn recurse<'a, 'b, T, F>(
     was_partitioned = was_p;
 
     // Split the slice into `left`, `pivot`, and `right`.
-    let (left, right) = unsafe { v.const_split_at_mut_unchecked(mid) };
-    let (pivot, right) = unsafe { right.const_split_at_mut_unchecked(1) };
+    let (left, right) = v.const_split_at_mut(mid);
+    let (pivot, right) = right.const_split_at_mut(1);
     let pivot = &pivot[0];
 
     // Recurse into the shorter side only in order to minimize the total number of recursive
