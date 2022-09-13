@@ -29,8 +29,8 @@ pub use const_sort::*;
 
 pub(crate) mod slice_const_split_at;
 
-mod const_sort_core;
-pub use const_sort_core::*;
+mod const_core_slice_sort_internals;
+pub use const_core_slice_sort_internals::*;
 
 #[cfg(test)]
 mod test;
