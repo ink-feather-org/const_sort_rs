@@ -15,9 +15,10 @@ pub(crate) trait ConstSplitAtExtensions<T> {
   ///
   /// # Examples
   ///
-  /// ```
+  /// ```ignore
+  /// use crate::ConstSplitAtExtensions;
   /// let mut v = [1, 0, 3, 0, 5, 6];
-  /// let (left, right) = v.split_at_mut(2);
+  /// let (left, right) = v.const_split_at_mut(2);
   /// assert_eq!(left, [1, 0]);
   /// assert_eq!(right, [3, 0, 5, 6]);
   /// left[1] = 2;
@@ -45,13 +46,14 @@ pub(crate) trait ConstSplitAtExtensions<T> {
   ///
   /// # Examples
   ///
-  /// ```
+  /// ```ignore
+  /// use crate::ConstSplitAtExtensions;
   /// #![feature(slice_split_at_unchecked)]
   ///
   /// let mut v = [1, 0, 3, 0, 5, 6];
   /// // scoped to restrict the lifetime of the borrows
   /// unsafe {
-  ///     let (left, right) = v.split_at_mut_unchecked(2);
+  ///     let (left, right) = v.const_split_at_mut_unchecked(2);
   ///     assert_eq!(left, [1, 0]);
   ///     assert_eq!(right, [3, 0, 5, 6]);
   ///     left[1] = 2;

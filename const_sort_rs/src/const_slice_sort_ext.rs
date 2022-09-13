@@ -58,12 +58,24 @@ pub trait ConstSliceSortExt<T> {
   /// For example, while [`f64`] doesn't implement [`Ord`] because `NaN != NaN`, we can use
   /// `partial_cmp` as our sort function when we know the slice doesn't contain a `NaN`.
   ///
-  /// ```
+  /// ```rust
+  /// #![feature(const_mut_refs)]
+  /// #![feature(const_trait_impl)]
+  /// #![feature(const_cmp)]
+  /// #![feature(const_option)]
+  /// # use core::cmp::Ordering;
   /// use const_sort_rs::ConstSliceSortExt;
   ///
-  /// let mut floats = [5f64, 4.0, 1.0, 3.0, 2.0];
-  /// floats.const_sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
-  /// assert_eq!(floats, [1.0, 2.0, 3.0, 4.0, 5.0]);
+  /// const FLOATS: [f64; 5] = {
+  ///   let mut floats = [5f64, 4.0, 1.0, 3.0, 2.0];
+  ///   // no const closures yet
+  ///   const fn pred(a: &f64, b: &f64) -> Ordering {
+  ///     a.partial_cmp(b).unwrap()
+  ///   }
+  ///   floats.const_sort_unstable_by(pred);
+  ///   floats
+  /// };
+  /// assert_eq!(FLOATS, [1.0, 2.0, 3.0, 4.0, 5.0]);
   /// ```
   ///
   /// # Current implementation
@@ -80,15 +92,36 @@ pub trait ConstSliceSortExt<T> {
   /// # Examples
   ///
   /// ```
+  /// #![feature(const_mut_refs)]
+  /// #![feature(const_trait_impl)]
+  /// #![feature(const_cmp)]
+  /// # use core::cmp::Ordering;
   /// use const_sort_rs::ConstSliceSortExt;
   ///
-  /// let mut v = [5, 4, 1, 3, 2];
-  /// v.const_sort_unstable_by(|a, b| a.cmp(b));
-  /// assert!(v == [1, 2, 3, 4, 5]);
+  /// const V: [i32; 5] = [5, 4, 1, 3, 2];
+  ///
+  /// const S: [i32; 5] = {
+  ///   let mut v = V;
+  ///   // no const closures yet
+  ///   const fn pred(a: &i32, b: &i32) -> Ordering {
+  ///     a.cmp(b)
+  ///   }
+  ///   v.const_sort_unstable_by(pred);
+  ///   v
+  /// };
+  /// assert_eq!(S, [1, 2, 3, 4, 5]);
   ///
   /// // reverse sorting
-  /// v.const_sort_unstable_by(|a, b| b.cmp(a));
-  /// assert!(v == [5, 4, 3, 2, 1]);
+  /// const R: [i32; 5] = {
+  ///   let mut v = V;
+  ///   // no const closures yet
+  ///   const fn pred(a: &i32, b: &i32) -> Ordering {
+  ///     b.cmp(a)
+  ///   }
+  ///   v.const_sort_unstable_by(pred);
+  ///   v
+  /// };
+  /// assert_eq!(R, [5, 4, 3, 2, 1]);
   /// ```
   ///
   /// [pdqsort]: https://github.com/orlp/pdqsort
@@ -117,12 +150,21 @@ pub trait ConstSliceSortExt<T> {
   /// # Examples
   ///
   /// ```
+  /// #![feature(const_mut_refs)]
+  /// #![feature(const_trait_impl)]
+  /// #![feature(const_cmp)]
   /// use const_sort_rs::ConstSliceSortExt;
   ///
-  /// let mut v = [-5i32, 4, 1, -3, 2];
-  ///
-  /// v.const_sort_unstable_by_key(|k| k.abs());
-  /// assert!(v == [1, 2, -3, 4, -5]);
+  /// const V: [i32; 5] = {
+  ///   let mut v = [-5i32, 4, 1, -3, 2];
+  ///   // no const closures yet
+  ///   const fn pred(k: &i32) -> i32 {
+  ///     k.abs()
+  ///   }
+  ///   v.const_sort_unstable_by_key(pred);
+  ///   v
+  /// };
+  /// assert_eq!(V, [1, 2, -3, 4, -5]);
   /// ```
   ///
   /// [pdqsort]: https://github.com/orlp/pdqsort

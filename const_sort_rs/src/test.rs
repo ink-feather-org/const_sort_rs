@@ -62,3 +62,6 @@ fn const_core_slice_sort_unstable_by_key() {
   v.sort_unstable_by_key(|k| k.abs());
   assert!(v == [1, 2, -3, 4, -5]);
 }
+
+#[test]
+fn tmp_doc_test() {}
