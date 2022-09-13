@@ -1,7 +1,5 @@
-//! TODO
-
 #![no_std]
-//#![warn(missing_docs)] // TODO deny
+#![deny(missing_docs)]
 #![deny(unsafe_op_in_unsafe_fn)]
 #![warn(clippy::undocumented_unsafe_blocks, clippy::pedantic, clippy::nursery)]
 #![feature(const_refs_to_cell)]
@@ -12,11 +10,9 @@
 #![feature(const_mut_refs)]
 #![feature(const_swap)]
 #![feature(const_cmp)] // For tests
-#![feature(const_slice_index)]
 #![feature(const_slice_from_raw_parts_mut)]
 #![feature(maybe_uninit_slice)] // const_sort_core
 #![feature(strict_provenance)] // const_sort_core
-//#![feature(const_slice_index)] // const_sort_core
 #![feature(const_ptr_read)] // const_sort_core
 #![feature(const_deref)] // const_sort_core
 #![feature(const_reverse)] // const_sort_core
@@ -24,15 +20,21 @@
 #![feature(const_maybe_uninit_write)] // const_sort_core
 #![feature(core_intrinsics)] // const_sort_core
 #![feature(const_eval_select)] // const_sort_core
+#![feature(const_slice_index)] // const_sort_core
 #![feature(is_sorted)] // For tests
+#![feature(unboxed_closures)] // For const_slice_sort_ext
+#![feature(fn_traits)] // For const_slice_sort_ext
+//#![feature(const_ord)]
+/*! TODO */
 
-mod const_sort;
-pub use const_sort::*;
-
+pub(crate) mod fake_usize_ptr;
 pub(crate) mod slice_const_split_at;
 
 mod const_core_slice_sort_internals;
 pub use const_core_slice_sort_internals::*;
+
+mod const_slice_sort_ext;
+pub use const_slice_sort_ext::*;
 
 #[cfg(test)]
 mod test;

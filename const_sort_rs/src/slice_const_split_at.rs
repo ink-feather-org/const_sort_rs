@@ -69,7 +69,7 @@ impl<T> const ConstSplitAtExtensions<T> for [T] {
   fn const_split_at_mut(&mut self, mid: usize) -> (&mut [T], &mut [T]) {
     assert!(mid <= self.len());
     // SAFETY: `[ptr; mid]` and `[mid; len]` are inside `self`, which
-    // fulfills the requirements of `from_raw_parts_mut`.
+    // fulfils the requirements of `from_raw_parts_mut`.
     unsafe { ConstSplitAtExtensions::const_split_at_mut_unchecked(self, mid) }
   }
 

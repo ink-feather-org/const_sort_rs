@@ -1,3 +1,5 @@
+// https://doc.rust-lang.org/src/core/slice/sort.rs.html
+
 //! Slice sorting
 //!
 //! This module contains a sorting algorithm based on Orson Peters' pattern-defeating quicksort,
@@ -6,93 +8,14 @@
 //! Unstable sorting is compatible with libcore because it doesn't allocate memory, unlike our
 //! stable sorting implementation.
 
-// https://doc.rust-lang.org/src/core/slice/sort.rs.html
-
-use core::cmp::{self, Ordering};
+use core::cmp::{self};
 use core::intrinsics::const_eval_select;
 use core::marker::Destruct;
 use core::mem::{self, MaybeUninit};
-use core::ops::{Index, IndexMut};
 use core::ptr;
 
+use crate::fake_usize_ptr::FakeUsizePtr;
 use crate::slice_const_split_at::ConstSplitAtExtensions;
-
-#[derive(Eq, Clone, Copy)]
-struct FakeUsizePtr(usize);
-impl FakeUsizePtr {
-  pub const fn null_mut() -> Self {
-    Self(0)
-  }
-  pub const fn offset(self, count: isize) -> Self {
-    Self(self.0.checked_add_signed(count).unwrap())
-  }
-  pub const fn add(self, count: usize) -> Self {
-    Self(self.0.checked_add(count).unwrap())
-  }
-  pub const fn sub(self, count: usize) -> Self {
-    Self(self.0.checked_sub(count).unwrap())
-  }
-  pub const fn addr(self) -> usize {
-    self.0
-  }
-}
-
-impl<T> const Index<FakeUsizePtr> for [T] {
-  type Output = T;
-
-  fn index(&self, index: FakeUsizePtr) -> &Self::Output {
-    &self[index.0]
-  }
-}
-
-impl<T> const IndexMut<FakeUsizePtr> for [T] {
-  fn index_mut(&mut self, index: FakeUsizePtr) -> &mut Self::Output {
-    &mut self[index.0]
-  }
-}
-
-impl const PartialEq for FakeUsizePtr {
-  fn eq(&self, other: &Self) -> bool {
-    self.0.eq(&other.0)
-  }
-}
-
-impl const PartialOrd for FakeUsizePtr {
-  fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-    self.0.partial_cmp(&other.0)
-  }
-}
-
-impl const Ord for FakeUsizePtr {
-  fn cmp(&self, other: &Self) -> Ordering {
-    self.0.cmp(&other.0)
-  }
-}
-
-pub trait ConstUnstableSortable {
-  /// Sorts `v` using heapsort, which guarantees *O*(*n* \* log(*n*)) worst-case.
-  ///
-  /// Constified version of `core::slice::heapsort`.
-  fn const_heapsort(&mut self);
-  /// Sorts `v` using pattern-defeating quicksort, which is *O*(*n* \* log(*n*)) worst-case.
-  ///
-  /// Constified version of `core::slice::quicksort`.
-  fn const_quicksort(&mut self);
-}
-
-const fn const_pred_lt<T: Ord + ~const PartialOrd>(a: &T, b: &T) -> bool {
-  a.lt(b)
-}
-
-impl<T: Ord + ~const PartialOrd> const ConstUnstableSortable for [T] {
-  fn const_heapsort(&mut self) {
-    const_heapsort(self, &mut const_pred_lt)
-  }
-
-  fn const_quicksort(&mut self) {
-    const_quicksort(self, const_pred_lt)
-  }
-}
 
 /// When dropped, copies from `src` into `dest`.
 struct CopyOnDrop<T> {
@@ -282,6 +205,10 @@ where
 }
 
 /// Sorts `v` using heapsort, which guarantees *O*(*n* \* log(*n*)) worst-case.
+///
+/// Constified version of `core::slice::heapsort`.
+///
+/// Note: Unstable sort.
 ///
 /// Note: The public api of this function had to be adapted. `is_less` now takes a mut ref.
 ///       This will be changed back once `const_fn_traits` lands.
@@ -974,6 +901,10 @@ const fn recurse<'a, T, F>(
 }
 
 /// Sorts `v` using pattern-defeating quicksort, which is *O*(*n* \* log(*n*)) worst-case.
+///
+/// Constified version of `core::slice::quicksort`.
+///
+/// Note: Unstable sort.
 pub const fn const_quicksort<'a, T, F>(v: &mut [T], mut is_less: F)
 where
   F: ~const FnMut(&T, &T) -> bool + ~const Destruct,
@@ -1049,6 +980,7 @@ const fn partition_at_index_loop<'a, T, F>(
   }
 }
 
+#[allow(missing_docs)]
 pub const fn partition_at_index<T, F>(
   v: &mut [T],
   index: usize,

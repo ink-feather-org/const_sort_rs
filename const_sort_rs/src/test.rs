@@ -10,26 +10,10 @@ fn gen_array(n: usize) -> Vec<u32> {
 }
 
 #[test]
-fn const_slice_sort() {
-  const ARR: [u8; 4] = {
-    let mut x = [2, 3, 5, 4];
-    x.const_sort_unstable();
-    x
-  };
-  assert_eq!(&ARR, &[2, 3, 4, 5])
-}
-#[test]
-fn const_slice_sort_rng() {
-  let mut vec = gen_array(RAND_CNT);
-  vec.const_sort_unstable();
-  assert!(vec.is_sorted())
-}
-
-#[test]
 fn const_core_slice_heapsort() {
   const ARR: [u8; 4] = {
     let mut x = [2, 3, 5, 4];
-    x.const_heapsort();
+    const_heapsort(&mut x, &mut const_pred_lt);
     x
   };
   assert_eq!(&ARR, &[2, 3, 4, 5])
@@ -37,7 +21,7 @@ fn const_core_slice_heapsort() {
 #[test]
 fn const_core_slice_heapsort_rng() {
   let mut vec = gen_array(RAND_CNT);
-  vec.const_heapsort();
+  const_heapsort(&mut vec, &mut const_pred_lt);
   assert!(vec.is_sorted())
 }
 
@@ -45,7 +29,7 @@ fn const_core_slice_heapsort_rng() {
 fn const_core_slice_quicksort() {
   const ARR: [u8; 4] = {
     let mut x = [2, 3, 5, 4];
-    x.const_quicksort();
+    const_quicksort(&mut x, const_pred_lt);
     x
   };
   assert_eq!(&ARR, &[2, 3, 4, 5])
@@ -53,6 +37,6 @@ fn const_core_slice_quicksort() {
 #[test]
 fn const_core_slice_quicksort_rng() {
   let mut vec = gen_array(RAND_CNT);
-  vec.const_quicksort();
+  const_quicksort(&mut vec, const_pred_lt);
   assert!(vec.is_sorted())
 }
