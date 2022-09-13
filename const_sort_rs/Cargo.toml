@@ -7,11 +7,11 @@ authors = [
   "raldone01 <raldone01@gmail.com>",
   "onestacked <chrisi.schrefl@gmail.com>",
 ]
-description = "Rust sort algos in const items."
+description = "Sort slices in const items."
 homepage = "https://github.com/raldone01/const_sort_rs"
 repository = "https://github.com/raldone01/const_sort_rs"
 categories = ["no-std", "rust-patterns"]
-keywords = ["sort", "const", "nightly", "sort_interals"]
+keywords = ["sort", "const", "nightly", "sort_internals"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dev-dependencies]
