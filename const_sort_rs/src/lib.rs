@@ -42,6 +42,7 @@ This crate requires a nightly compiler.
 ## What can this crate do?
 
 This crate implements the [`sort_unstable*`](https://doc.rust-lang.org/nightly/std/primitive.slice.html#method.sort_unstable) functions and as a bonus exposes a const version of `sort_internals`.
+Check out the `ConstSliceSortExt` trait to see all available functions and const examples.
 
 Your types must implement `~const PartialOrd`.
 
