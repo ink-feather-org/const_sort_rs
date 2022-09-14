@@ -196,17 +196,23 @@ pub trait ConstSliceSortExt<T> {
   /// # Examples
   ///
   /// ```
-  /// let mut v = [-5i32, 4, 1, -3, 2];
-  ///
-  /// // Find the median
-  /// v.select_nth_unstable(2);
-  ///
+  /// #![feature(const_mut_refs)]
+  /// #![feature(const_trait_impl)]
+  /// use const_sort_rs::ConstSliceSortExt;
+  /// const V: [i32; 5] = {
+  ///   let mut v = [-5i32, 4, 1, -3, 2];
+  ///   // Find the median
+  ///   v.const_select_nth_unstable(2);
+  ///   v
+  /// };
   /// // We are only guaranteed the slice will be one of the following, based on the way we sort
   /// // about the specified index.
-  /// assert!(v == [-3, -5, 1, 2, 4] ||
-  ///         v == [-5, -3, 1, 2, 4] ||
-  ///         v == [-3, -5, 1, 4, 2] ||
-  ///         v == [-5, -3, 1, 4, 2]);
+  /// assert!(
+  ///   V == [-3, -5, 1, 2, 4]
+  ///     || V == [-5, -3, 1, 2, 4]
+  ///     || V == [-3, -5, 1, 4, 2]
+  ///     || V == [-5, -3, 1, 4, 2]
+  /// );
   /// ```
   fn const_select_nth_unstable(&mut self, index: usize) -> (&mut [T], &mut T, &mut [T])
   where
@@ -237,17 +243,31 @@ pub trait ConstSliceSortExt<T> {
   /// # Examples
   ///
   /// ```
-  /// let mut v = [-5i32, 4, 1, -3, 2];
+  /// #![feature(const_mut_refs)]
+  /// #![feature(const_trait_impl)]
+  /// #![feature(const_cmp)]
+  /// # use core::cmp::Ordering;
+  /// use const_sort_rs::ConstSliceSortExt;
   ///
-  /// // Find the median as if the slice were sorted in descending order.
-  /// v.select_nth_unstable_by(2, |a, b| b.cmp(a));
+  /// const V: [i32; 5] = {
+  ///   let mut v = [-5i32, 4, 1, -3, 2];
+  ///   // no const closures yet
+  ///   const fn pred(a: &i32, b: &i32) -> Ordering {
+  ///     b.cmp(a)
+  ///   }
+  ///   // Find the median as if the slice were sorted in descending order.
+  ///   v.const_select_nth_unstable_by(2, pred);
+  ///   v
+  /// };
   ///
   /// // We are only guaranteed the slice will be one of the following, based on the way we sort
   /// // about the specified index.
-  /// assert!(v == [2, 4, 1, -5, -3] ||
-  ///         v == [2, 4, 1, -3, -5] ||
-  ///         v == [4, 2, 1, -5, -3] ||
-  ///         v == [4, 2, 1, -3, -5]);
+  /// assert!(
+  ///   V == [2, 4, 1, -5, -3]
+  ///     || V == [2, 4, 1, -3, -5]
+  ///     || V == [4, 2, 1, -5, -3]
+  ///     || V == [4, 2, 1, -3, -5]
+  /// );
   /// ```
   fn const_select_nth_unstable_by<F>(
     &mut self,
@@ -282,17 +302,30 @@ pub trait ConstSliceSortExt<T> {
   /// # Examples
   ///
   /// ```
-  /// let mut v = [-5i32, 4, 1, -3, 2];
+  /// #![feature(const_mut_refs)]
+  /// #![feature(const_trait_impl)]
+  /// #![feature(const_cmp)]
+  /// use const_sort_rs::ConstSliceSortExt;
   ///
-  /// // Return the median as if the array were sorted according to absolute value.
-  /// v.select_nth_unstable_by_key(2, |a| a.abs());
+  /// const V: [i32; 5] = {
+  ///   let mut v = [-5i32, 4, 1, -3, 2];
+  ///   // no const closures yet
+  ///   const fn pred(k: &i32) -> i32 {
+  ///     k.abs()
+  ///   }
+  ///   // Return the median as if the array were sorted according to absolute value.
+  ///   v.const_select_nth_unstable_by_key(2, pred);
+  ///   v
+  /// };
   ///
   /// // We are only guaranteed the slice will be one of the following, based on the way we sort
   /// // about the specified index.
-  /// assert!(v == [1, 2, -3, 4, -5] ||
-  ///         v == [1, 2, -3, -5, 4] ||
-  ///         v == [2, 1, -3, 4, -5] ||
-  ///         v == [2, 1, -3, -5, 4]);
+  /// assert!(
+  ///   V == [1, 2, -3, 4, -5]
+  ///     || V == [1, 2, -3, -5, 4]
+  ///     || V == [2, 1, -3, 4, -5]
+  ///     || V == [2, 1, -3, -5, 4]
+  /// );
   /// ```
   fn const_select_nth_unstable_by_key<K, F>(
     &mut self,
@@ -315,14 +348,21 @@ pub trait ConstSliceSortExt<T> {
   /// # Examples
   ///
   /// ```
-  /// #![feature(is_sorted)]
-  /// let empty: [i32; 0] = [];
+  /// #![feature(const_mut_refs)]
+  /// #![feature(const_trait_impl)]
+  /// use const_sort_rs::ConstSliceSortExt;
   ///
-  /// assert!([1, 2, 2, 9].is_sorted());
-  /// assert!(![1, 3, 2, 4].is_sorted());
-  /// assert!([0].is_sorted());
-  /// assert!(empty.is_sorted());
-  /// assert!(![0.0, 1.0, f32::NAN].is_sorted());
+  /// const A: bool = [1, 2, 2, 9].const_is_sorted();
+  /// assert!(A);
+  /// const B: bool = [1, 3, 2, 4].const_is_sorted();
+  /// assert!(!B);
+  /// const C: bool = [0].const_is_sorted();
+  /// assert!(C);
+  /// const EMPTY: [i32; 0] = [];
+  /// const D: bool = EMPTY.const_is_sorted();
+  /// assert!(D);
+  /// const E: bool = [0.0, 1.0, f32::NAN].const_is_sorted();
+  /// assert!(!E);
   /// ```
   #[must_use]
   fn const_is_sorted(&self) -> bool
