@@ -211,9 +211,6 @@ where
 /// Constified version of `core::slice::heapsort`.
 ///
 /// Note: Unstable sort.
-///
-/// Note: The public api of this function had to be adapted. `is_less` now takes a mut ref.
-///       This will be changed back once `const_fn_traits` lands.
 #[cold]
 pub const fn const_heapsort<T, F>(v: &mut [T], mut is_less: F)
 where
@@ -844,7 +841,7 @@ const fn recurse<'a, T, F>(
       let mut is_less = is_less;
       const_heapsort(
         v,
-        const_closure!(FnMut for<T, F: FnMut(&T, &T) -> bool> [is_less: &'a mut F] (a: &T, b: &T) -> bool {(*is_less)(a,b)}),
+        const_closure!(FnMut for<T, F: FnMut(&T, &T) -> bool> [is_less: &'a mut F] (a: &T, b: &T) -> bool {(*is_less)(a,b)}), // FIXME: This closure can be removed once const_fn_trait_ref_impls lands.
       );
       return;
     }
@@ -986,8 +983,7 @@ const fn partition_at_index_loop<'a, T, F>(
   }
 }
 
-#[allow(missing_docs)]
-pub const fn partition_at_index<T, F>(
+pub(crate) const fn const_partition_at_index<T, F>(
   v: &mut [T],
   index: usize,
   mut is_less: F,

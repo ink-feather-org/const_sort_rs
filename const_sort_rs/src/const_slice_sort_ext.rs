@@ -171,6 +171,174 @@ pub trait ConstSliceSortExt<T> {
   where
     F: FnMut(&T) -> K,
     K: Ord;
+
+  /// Reorder the slice such that the element at `index` is at its final sorted position.
+  ///
+  /// This reordering has the additional property that any value at position `i < index` will be
+  /// less than or equal to any value at a position `j > index`. Additionally, this reordering is
+  /// unstable (i.e. any number of equal elements may end up at position `index`), in-place
+  /// (i.e. does not allocate), and *O*(*n*) worst-case. This function is also/ known as "kth
+  /// element" in other libraries. It returns a triplet of the following values: all elements less
+  /// than the one at the given index, the value at the given index, and all elements greater than
+  /// the one at the given index.
+  ///
+  /// # Current implementation
+  ///
+  /// The current algorithm is based on the quickselect portion of the same quicksort algorithm
+  /// used for [`sort_unstable`].
+  ///
+  /// [`sort_unstable`]: slice::sort_unstable
+  ///
+  /// # Panics
+  ///
+  /// Panics when `index >= len()`, meaning it always panics on empty slices.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// let mut v = [-5i32, 4, 1, -3, 2];
+  ///
+  /// // Find the median
+  /// v.select_nth_unstable(2);
+  ///
+  /// // We are only guaranteed the slice will be one of the following, based on the way we sort
+  /// // about the specified index.
+  /// assert!(v == [-3, -5, 1, 2, 4] ||
+  ///         v == [-5, -3, 1, 2, 4] ||
+  ///         v == [-3, -5, 1, 4, 2] ||
+  ///         v == [-5, -3, 1, 4, 2]);
+  /// ```
+  fn const_select_nth_unstable(&mut self, index: usize) -> (&mut [T], &mut T, &mut [T])
+  where
+    T: Ord;
+  /// Reorder the slice with a comparator function such that the element at `index` is at its
+  /// final sorted position.
+  ///
+  /// This reordering has the additional property that any value at position `i < index` will be
+  /// less than or equal to any value at a position `j > index` using the comparator function.
+  /// Additionally, this reordering is unstable (i.e. any number of equal elements may end up at
+  /// position `index`), in-place (i.e. does not allocate), and *O*(*n*) worst-case. This function
+  /// is also known as "kth element" in other libraries. It returns a triplet of the following
+  /// values: all elements less than the one at the given index, the value at the given index,
+  /// and all elements greater than the one at the given index, using the provided comparator
+  /// function.
+  ///
+  /// # Current implementation
+  ///
+  /// The current algorithm is based on the quickselect portion of the same quicksort algorithm
+  /// used for [`sort_unstable`].
+  ///
+  /// [`sort_unstable`]: slice::sort_unstable
+  ///
+  /// # Panics
+  ///
+  /// Panics when `index >= len()`, meaning it always panics on empty slices.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// let mut v = [-5i32, 4, 1, -3, 2];
+  ///
+  /// // Find the median as if the slice were sorted in descending order.
+  /// v.select_nth_unstable_by(2, |a, b| b.cmp(a));
+  ///
+  /// // We are only guaranteed the slice will be one of the following, based on the way we sort
+  /// // about the specified index.
+  /// assert!(v == [2, 4, 1, -5, -3] ||
+  ///         v == [2, 4, 1, -3, -5] ||
+  ///         v == [4, 2, 1, -5, -3] ||
+  ///         v == [4, 2, 1, -3, -5]);
+  /// ```
+  fn const_select_nth_unstable_by<F>(
+    &mut self,
+    index: usize,
+    compare: F,
+  ) -> (&mut [T], &mut T, &mut [T])
+  where
+    F: FnMut(&T, &T) -> Ordering;
+  /// Reorder the slice with a key extraction function such that the element at `index` is at its
+  /// final sorted position.
+  ///
+  /// This reordering has the additional property that any value at position `i < index` will be
+  /// less than or equal to any value at a position `j > index` using the key extraction function.
+  /// Additionally, this reordering is unstable (i.e. any number of equal elements may end up at
+  /// position `index`), in-place (i.e. does not allocate), and *O*(*n*) worst-case. This function
+  /// is also known as "kth element" in other libraries. It returns a triplet of the following
+  /// values: all elements less than the one at the given index, the value at the given index, and
+  /// all elements greater than the one at the given index, using the provided key extraction
+  /// function.
+  ///
+  /// # Current implementation
+  ///
+  /// The current algorithm is based on the quickselect portion of the same quicksort algorithm
+  /// used for [`sort_unstable`].
+  ///
+  /// [`sort_unstable`]: slice::sort_unstable
+  ///
+  /// # Panics
+  ///
+  /// Panics when `index >= len()`, meaning it always panics on empty slices.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// let mut v = [-5i32, 4, 1, -3, 2];
+  ///
+  /// // Return the median as if the array were sorted according to absolute value.
+  /// v.select_nth_unstable_by_key(2, |a| a.abs());
+  ///
+  /// // We are only guaranteed the slice will be one of the following, based on the way we sort
+  /// // about the specified index.
+  /// assert!(v == [1, 2, -3, 4, -5] ||
+  ///         v == [1, 2, -3, -5, 4] ||
+  ///         v == [2, 1, -3, 4, -5] ||
+  ///         v == [2, 1, -3, -5, 4]);
+  /// ```
+  fn const_select_nth_unstable_by_key<K, F>(
+    &mut self,
+    index: usize,
+    f: F,
+  ) -> (&mut [T], &mut T, &mut [T])
+  where
+    F: FnMut(&T) -> K,
+    K: Ord;
+
+  /// Checks if the elements of this slice are sorted.
+  ///
+  /// That is, for each element `a` and its following element `b`, `a <= b` must hold. If the
+  /// slice yields exactly zero or one element, `true` is returned.
+  ///
+  /// Note that if `Self::Item` is only `PartialOrd`, but not `Ord`, the above definition
+  /// implies that this function returns `false` if any two consecutive items are not
+  /// comparable.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// #![feature(is_sorted)]
+  /// let empty: [i32; 0] = [];
+  ///
+  /// assert!([1, 2, 2, 9].is_sorted());
+  /// assert!(![1, 3, 2, 4].is_sorted());
+  /// assert!([0].is_sorted());
+  /// assert!(empty.is_sorted());
+  /// assert!(![0.0, 1.0, f32::NAN].is_sorted());
+  /// ```
+  #[must_use]
+  fn const_is_sorted(&self) -> bool
+  where
+    T: PartialOrd;
+  /// Checks if the elements of this slice are sorted using the given comparator function.
+  ///
+  /// Instead of using `PartialOrd::partial_cmp`, this function uses the given `compare`
+  /// function to determine the ordering of two elements. Apart from that, it's equivalent to
+  /// [`is_sorted`]; see its documentation for more information.
+  ///
+  /// [`is_sorted`]: slice::is_sorted
+  #[must_use]
+  fn const_is_sorted_by<F>(&self, compare: F) -> bool
+  where
+    F: FnMut(&T, &T) -> Option<Ordering>;
 }
 
 pub(crate) const fn const_pred_lt<T: Ord + ~const PartialOrd>(a: &T, b: &T) -> bool {
@@ -195,7 +363,7 @@ impl<T: ~const PartialOrd> const ConstSliceSortExt<T> for [T] {
       self,
       const_closure!(FnMut for<T, F: FnMut(&T, &T) -> Ordering> [compare: F]
         (a:&T, b: &T) -> bool {
-          matches!(compare(a, b), Ordering::Less)
+          matches!(compare(a, b), Ordering::Less) // FIXME: The matches can be replaced with `==` once const_ord_cmp lands.
       }),
     );
   }
@@ -205,11 +373,90 @@ impl<T: ~const PartialOrd> const ConstSliceSortExt<T> for [T] {
     F: ~const FnMut(&T) -> K + ~const Destruct,
     K: Ord + ~const PartialOrd + ~const Destruct,
   {
+    // sort::quicksort(self, |a, b| f(a).lt(&f(b)));
     const_sort::const_quicksort(
       self,
       const_closure!(FnMut for<T, K: PartialOrd, F: FnMut(&T) -> K> [f: F] (a:&T, b:&T) -> bool {
         f(a).lt(&f(b))
       }),
     );
+  }
+
+  #[inline]
+  fn const_select_nth_unstable(&mut self, index: usize) -> (&mut [T], &mut T, &mut [T])
+  where
+    T: Ord,
+  {
+    // let mut f = |a: &T, b: &T| a.lt(b);
+    // sort::partition_at_index(self, index, &mut f)
+    const_sort::const_partition_at_index(self, index, const_pred_lt)
+  }
+  #[inline]
+  fn const_select_nth_unstable_by<F>(
+    &mut self,
+    index: usize,
+    mut compare: F,
+  ) -> (&mut [T], &mut T, &mut [T])
+  where
+    F: ~const FnMut(&T, &T) -> Ordering + ~const Destruct,
+  {
+    // let mut f = |a: &T, b: &T| compare(a, b) == Less;
+    // sort::partition_at_index(self, index, &mut f)
+    const_sort::const_partition_at_index(
+      self,
+      index,
+      const_closure!(FnMut for<T, F: FnMut(&T, &T) -> Ordering> [compare: F]
+        (a:&T, b: &T) -> bool {
+          matches!(compare(a, b), Ordering::Less) // FIXME: The matches can be replaced with `==` once const_ord_cmp lands.
+      }),
+    )
+  }
+  #[inline]
+  fn const_select_nth_unstable_by_key<K, F>(
+    &mut self,
+    index: usize,
+    mut f: F,
+  ) -> (&mut [T], &mut T, &mut [T])
+  where
+    F: ~const FnMut(&T) -> K + ~const Destruct,
+    K: Ord + ~const PartialOrd + ~const Destruct,
+  {
+    // let mut g = |a: &T, b: &T| f(a).lt(&f(b));
+    // sort::partition_at_index(self, index, &mut g)
+    const_sort::const_partition_at_index(
+      self,
+      index,
+      const_closure!(FnMut for<T, K: PartialOrd, F: FnMut(&T) -> K> [f: F] (a:&T, b:&T) -> bool {
+        f(a).lt(&f(b))
+      }),
+    )
+  }
+
+  #[inline]
+  fn const_is_sorted(&self) -> bool {
+    const fn const_pred_p_cmp<T: ~const PartialOrd>(a: &T, b: &T) -> Option<Ordering> {
+      a.partial_cmp(b)
+    }
+    self.const_is_sorted_by(const_pred_p_cmp)
+  }
+  fn const_is_sorted_by<F>(&self, mut compare: F) -> bool
+  where
+    F: ~const FnMut(&T, &T) -> Option<Ordering> + ~const Destruct,
+  {
+    // https://doc.rust-lang.org/nightly/src/core/iter/traits/iterator.rs.html#3794
+    let mut i = 1;
+    while i < self.len() {
+      let ord_opt = compare(&self[i - 1], &self[i]);
+      if matches!(ord_opt, None) {
+        // FIXME: Once the matches can be replaced with `==`.
+        return false;
+      }
+      if matches!(ord_opt.unwrap(), Ordering::Greater) {
+        // FIXME: The matches can be replaced with `==` once const_ord_cmp lands.
+        return false;
+      }
+      i += 1;
+    }
+    true
   }
 }

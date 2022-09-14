@@ -1,5 +1,5 @@
+"cSpell.diagnosticLevel": "Information",
 {
-    "cSpell.diagnosticLevel": "Information",
     "cSpell.words": [
         "behaviour",
         "branchless",
@@ -18,6 +18,7 @@
         "Seedable",
         "Uninit",
         "VLAs",
-        "Xorshift"
+        "Xorshift",
+        "rustc"
     ]
 }
