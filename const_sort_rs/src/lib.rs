@@ -2,15 +2,12 @@
 #![deny(missing_docs)]
 #![deny(unsafe_op_in_unsafe_fn)]
 #![warn(clippy::undocumented_unsafe_blocks, clippy::pedantic, clippy::nursery)]
-#![feature(const_refs_to_cell)]
-#![feature(const_trait_impl)]
-#![feature(const_num_from_num)]
-#![feature(const_option)]
-#![feature(const_result_drop)]
-#![feature(const_mut_refs)]
-#![feature(const_swap)]
-#![feature(const_cmp)] // For tests
-#![feature(const_slice_from_raw_parts_mut)]
+#![feature(const_refs_to_cell)] // const_sort_core
+#![feature(const_trait_impl)] // const_sort_core
+#![feature(const_num_from_num)] // const_sort_core
+#![feature(const_option)] // const_sort_core
+#![feature(const_mut_refs)] // const_sort_core
+#![feature(const_swap)] // const_sort_core
 #![feature(maybe_uninit_slice)] // const_sort_core
 #![feature(strict_provenance)] // const_sort_core
 #![feature(const_ptr_read)] // const_sort_core
@@ -21,10 +18,14 @@
 #![feature(core_intrinsics)] // const_sort_core
 #![feature(const_eval_select)] // const_sort_core
 #![feature(const_slice_index)] // const_sort_core
-#![feature(is_sorted)] // For tests
-#![feature(unboxed_closures)] // For const_slice_sort_ext
-#![feature(fn_traits)] // For const_slice_sort_ext
-//#![feature(const_ord)] TODO replace matches!
+#![feature(const_cmp)] // const_sort_core
+#![feature(const_slice_from_raw_parts_mut)] // slice_const_split_at_mut FIXME: Replace with const_slice_split_at_mut once it lands.
+#![feature(unboxed_closures)] // const_slice_sort_ext
+#![feature(fn_traits)] // const_slice_sort_ext
+// For tests
+#![feature(is_sorted)]
+//#![feature(const_ord)] TODO replace matches! FIXME: Once partial_eq is added to the feature.
+
 /*!
 # const_sort_rs
 
@@ -84,7 +85,7 @@ conditions.
 */
 
 pub(crate) mod fake_usize_ptr;
-pub(crate) mod slice_const_split_at;
+pub(crate) mod slice_const_split_at_mut;
 
 pub mod const_sort;
 

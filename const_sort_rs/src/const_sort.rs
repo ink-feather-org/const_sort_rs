@@ -17,7 +17,7 @@ use core::ptr;
 use const_closure::const_closure;
 
 use crate::fake_usize_ptr::FakeUsizePtr;
-use crate::slice_const_split_at::ConstSplitAtExtensions;
+use crate::slice_const_split_at_mut::ConstSplitAtMutExtensions;
 
 /// When dropped, copies from `src` into `dest`.
 struct CopyOnDrop<T> {

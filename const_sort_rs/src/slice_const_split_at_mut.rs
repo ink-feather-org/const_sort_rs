@@ -3,7 +3,7 @@
 use core::slice;
 
 /// FIXME: Remove once `const_slice_split_at_mut` lands.
-pub(crate) trait ConstSplitAtExtensions<T> {
+pub(crate) trait ConstSplitAtMutExtensions<T> {
   /// Divides one mutable slice into two at an index.
   ///
   /// The first will contain all indices from `[0, mid)` (excluding
@@ -66,14 +66,14 @@ pub(crate) trait ConstSplitAtExtensions<T> {
   unsafe fn const_split_at_mut_unchecked(&mut self, mid: usize) -> (&mut [T], &mut [T]);
 }
 
-impl<T> const ConstSplitAtExtensions<T> for [T] {
+impl<T> const ConstSplitAtMutExtensions<T> for [T] {
   #[inline]
   #[track_caller]
   fn const_split_at_mut(&mut self, mid: usize) -> (&mut [T], &mut [T]) {
     assert!(mid <= self.len());
     // SAFETY: `[ptr; mid]` and `[mid; len]` are inside `self`, which
     // fulfils the requirements of `from_raw_parts_mut`.
-    unsafe { ConstSplitAtExtensions::const_split_at_mut_unchecked(self, mid) }
+    unsafe { ConstSplitAtMutExtensions::const_split_at_mut_unchecked(self, mid) }
   }
 
   #[inline]

@@ -1,5 +1,4 @@
 extern crate alloc;
-use core::cmp::Ordering;
 
 use alloc::vec::Vec;
 use rand::{prelude::StdRng, Rng, SeedableRng};
