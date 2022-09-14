@@ -41,8 +41,8 @@ assert_eq!(V, [-5, -3, 1, 2, 4])
 
 This project is released under either:
 
-- [MIT License](https://github.com/raldone01/trait_cast_rs/blob/main/LICENSE-MIT)
-- [Apache License (Version 2.0)](https://github.com/raldone01/trait_cast_rs/blob/main/LICENSE-APACHE)
+- [MIT License](https://github.com/raldone01/const_sort_rs/blob/main/LICENSE-MIT)
+- [Apache License (Version 2.0)](https://github.com/raldone01/const_sort_rs/blob/main/LICENSE-APACHE)
 
 at your choosing.
 
