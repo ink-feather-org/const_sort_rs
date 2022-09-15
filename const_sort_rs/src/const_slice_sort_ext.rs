@@ -379,17 +379,49 @@ pub trait ConstSliceSortExt<T> {
   fn const_is_sorted_by<F>(&self, compare: F) -> bool
   where
     F: FnMut(&T, &T) -> Option<Ordering>;
+  /// Checks if the elements of this slice are sorted using the given key extraction function.
+  ///
+  /// Instead of comparing the slice's elements directly, this function compares the keys of the
+  /// elements, as determined by `f`. Apart from that, it's equivalent to [`is_sorted`]; see its
+  /// documentation for more information.
+  ///
+  /// [`is_sorted`]: slice::is_sorted
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// #![feature(const_mut_refs)]
+  /// #![feature(const_trait_impl)]
+  /// use const_sort_rs::ConstSliceSortExt;
+  ///
+  /// const fn map_len(s: &&str) -> usize {
+  ///   s.len()
+  /// }
+  /// const A: bool = ["c", "bb", "aaa"].const_is_sorted_by_key(map_len);
+  /// assert!(A);
+  ///
+  /// const fn map_abs(i: &i32) -> i32 {
+  ///   i.abs()
+  /// }
+  /// const B: bool = [-2i32, -1, 0, 3].const_is_sorted_by_key(map_abs);
+  /// assert!(!B);
+  /// ```
+  #[must_use]
+  fn const_is_sorted_by_key<F, K>(&self, f: F) -> bool
+  where
+    F: FnMut(&T) -> K,
+    K: PartialOrd;
 }
 
 pub(crate) const fn const_pred_lt<T: Ord + ~const PartialOrd>(a: &T, b: &T) -> bool {
   a.lt(b)
 }
 
-impl<T: ~const PartialOrd> const ConstSliceSortExt<T> for [T] {
+impl<T> const ConstSliceSortExt<T> for [T] {
   #[inline]
   fn const_sort_unstable(&mut self)
   where
-    T: Ord,
+    T: ~const PartialOrd + Ord,
   {
     const_sort::const_quicksort(self, const_pred_lt);
   }
@@ -425,7 +457,7 @@ impl<T: ~const PartialOrd> const ConstSliceSortExt<T> for [T] {
   #[inline]
   fn const_select_nth_unstable(&mut self, index: usize) -> (&mut [T], &mut T, &mut [T])
   where
-    T: Ord,
+    T: ~const PartialOrd + Ord,
   {
     // let mut f = |a: &T, b: &T| a.lt(b);
     // sort::partition_at_index(self, index, &mut f)
@@ -473,7 +505,10 @@ impl<T: ~const PartialOrd> const ConstSliceSortExt<T> for [T] {
   }
 
   #[inline]
-  fn const_is_sorted(&self) -> bool {
+  fn const_is_sorted(&self) -> bool
+  where
+    T: ~const PartialOrd,
+  {
     const fn const_pred_p_cmp<T: ~const PartialOrd>(a: &T, b: &T) -> Option<Ordering> {
       a.partial_cmp(b)
     }
@@ -498,5 +533,17 @@ impl<T: ~const PartialOrd> const ConstSliceSortExt<T> for [T] {
       i += 1;
     }
     true
+  }
+  #[inline]
+  fn const_is_sorted_by_key<F, K>(&self, mut f: F) -> bool
+  where
+    F: ~const FnMut(&T) -> K + ~const Destruct,
+    K: ~const PartialOrd + ~const Destruct,
+  {
+    self.const_is_sorted_by(
+      const_closure!(FnMut for<T, K: PartialOrd, F: FnMut(&T) -> K> [f: F] (a:&T, b:&T) -> Option<Ordering> {
+        f(a).partial_cmp(&f(b))
+      }),
+    )
   }
 }
