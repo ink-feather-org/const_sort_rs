@@ -435,7 +435,7 @@ impl<T> const ConstSliceSortExt<T> for [T] {
       self,
       const_closure!(FnMut for<T, F: FnMut(&T, &T) -> Ordering> [compare: F]
         (a:&T, b: &T) -> bool {
-          matches!(compare(a, b), Ordering::Less) // FIXME: The matches can be replaced with `==` once const_ord_cmp lands.
+         compare(a, b) == Ordering::Less
       }),
     );
   }
@@ -479,7 +479,7 @@ impl<T> const ConstSliceSortExt<T> for [T] {
       index,
       const_closure!(FnMut for<T, F: FnMut(&T, &T) -> Ordering> [compare: F]
         (a:&T, b: &T) -> bool {
-          matches!(compare(a, b), Ordering::Less) // FIXME: The matches can be replaced with `==` once const_ord_cmp lands.
+          compare(a, b) == Ordering::Less
       }),
     )
   }
@@ -526,8 +526,7 @@ impl<T> const ConstSliceSortExt<T> for [T] {
         // FIXME: Once the matches can be replaced with `==`.
         return false;
       }
-      if matches!(ord_opt.unwrap(), Ordering::Greater) {
-        // FIXME: The matches can be replaced with `==` once const_ord_cmp lands.
+      if ord_opt.unwrap() == Ordering::Greater {
         return false;
       }
       i += 1;

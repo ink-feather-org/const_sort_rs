@@ -14,8 +14,6 @@ use core::marker::Destruct;
 use core::mem::{self, MaybeUninit};
 use core::ptr;
 
-use const_closure::const_closure;
-
 use crate::fake_usize_ptr::FakeUsizePtr;
 use crate::slice_const_split_at_mut::ConstSplitAtMutExtensions;
 
@@ -838,11 +836,7 @@ const fn recurse<'a, T, F>(
     // If too many bad pivot choices were made, simply fall back to heapsort in order to
     // guarantee `O(n * log(n))` worst-case.
     if limit == 0 {
-      let mut is_less = is_less;
-      const_heapsort(
-        v,
-        const_closure!(FnMut for<T, F: FnMut(&T, &T) -> bool> [is_less: &'a mut F] (a: &T, b: &T) -> bool {(*is_less)(a,b)}), // FIXME: This closure can be removed once const_fn_trait_ref_impls lands.
-      );
+      const_heapsort(v, is_less);
       return;
     }
 

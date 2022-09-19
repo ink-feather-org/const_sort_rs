@@ -24,7 +24,6 @@
 #![feature(fn_traits)] // const_slice_sort_ext
 // For tests
 #![feature(is_sorted)]
-//#![feature(const_ord)] TODO replace matches! FIXME: Once partial_eq is added to the feature.
 
 /*!
 # const_sort_rs
