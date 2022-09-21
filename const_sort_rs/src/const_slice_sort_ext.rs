@@ -1,6 +1,6 @@
 use core::{cmp::Ordering, marker::Destruct};
 
-use const_closure::const_closure;
+use const_closure::ConstFnMutClosure;
 
 use crate::const_sort;
 
@@ -378,7 +378,7 @@ pub trait ConstSliceSortExt<T> {
   #[must_use]
   fn const_is_sorted_by<F>(&self, compare: F) -> bool
   where
-    F: FnMut(&T, &T) -> Option<Ordering>;
+    F: for<'a> FnMut(&'a T, &'a T) -> Option<Ordering>;
   /// Checks if the elements of this slice are sorted using the given key extraction function.
   ///
   /// Instead of comparing the slice's elements directly, this function compares the keys of the
@@ -417,7 +417,7 @@ pub(crate) const fn const_pred_lt<T: Ord + ~const PartialOrd>(a: &T, b: &T) -> b
   a.lt(b)
 }
 
-impl<T> const ConstSliceSortExt<T> for [T] {
+impl<T: ~const Destruct> const ConstSliceSortExt<T> for [T] {
   #[inline]
   fn const_sort_unstable(&mut self)
   where
@@ -431,13 +431,13 @@ impl<T> const ConstSliceSortExt<T> for [T] {
     F: ~const FnMut(&T, &T) -> Ordering + ~const Destruct,
   {
     // sort::const_quicksort(self, |a, b| compare(a, b) == Ordering::Less);
-    const_sort::const_quicksort(
-      self,
-      const_closure!(FnMut for<T, F: FnMut(&T, &T) -> Ordering> [compare: F]
-        (a:&T, b: &T) -> bool {
-         compare(a, b) == Ordering::Less
-      }),
-    );
+    const fn imp<T, F>(compare: &mut F, (a, b): (&T, &T)) -> bool
+    where
+      F: ~const FnMut(&T, &T) -> Ordering + ~const Destruct,
+    {
+      compare(a, b) == Ordering::Less
+    }
+    const_sort::const_quicksort(self, ConstFnMutClosure::new(&mut compare, imp));
   }
   #[inline]
   fn const_sort_unstable_by_key<K, F>(&mut self, mut f: F)
@@ -446,12 +446,13 @@ impl<T> const ConstSliceSortExt<T> for [T] {
     K: Ord + ~const PartialOrd + ~const Destruct,
   {
     // sort::quicksort(self, |a, b| f(a).lt(&f(b)));
-    const_sort::const_quicksort(
-      self,
-      const_closure!(FnMut for<T, K: PartialOrd, F: FnMut(&T) -> K> [f: F] (a:&T, b:&T) -> bool {
-        f(a).lt(&f(b))
-      }),
-    );
+    const fn imp<T, F, K: ~const PartialOrd + ~const Destruct>(f: &mut F, (a, b): (&T, &T)) -> bool
+    where
+      F: ~const FnMut(&T) -> K + ~const Destruct,
+    {
+      f(a).lt(&f(b))
+    }
+    const_sort::const_quicksort(self, ConstFnMutClosure::new(&mut f, imp));
   }
 
   #[inline]
@@ -474,14 +475,13 @@ impl<T> const ConstSliceSortExt<T> for [T] {
   {
     // let mut f = |a: &T, b: &T| compare(a, b) == Less;
     // sort::partition_at_index(self, index, &mut f)
-    const_sort::const_partition_at_index(
-      self,
-      index,
-      const_closure!(FnMut for<T, F: FnMut(&T, &T) -> Ordering> [compare: F]
-        (a:&T, b: &T) -> bool {
-          compare(a, b) == Ordering::Less
-      }),
-    )
+    const fn imp<T, F>(compare: &mut F, (a, b): (&T, &T)) -> bool
+    where
+      F: ~const FnMut(&T, &T) -> Ordering + ~const Destruct,
+    {
+      compare(a, b) == Ordering::Less
+    }
+    const_sort::const_partition_at_index(self, index, ConstFnMutClosure::new(&mut compare, imp))
   }
   #[inline]
   fn const_select_nth_unstable_by_key<K, F>(
@@ -495,13 +495,13 @@ impl<T> const ConstSliceSortExt<T> for [T] {
   {
     // let mut g = |a: &T, b: &T| f(a).lt(&f(b));
     // sort::partition_at_index(self, index, &mut g)
-    const_sort::const_partition_at_index(
-      self,
-      index,
-      const_closure!(FnMut for<T, K: PartialOrd, F: FnMut(&T) -> K> [f: F] (a:&T, b:&T) -> bool {
-        f(a).lt(&f(b))
-      }),
-    )
+    const fn imp<T, F, K: ~const PartialOrd + ~const Destruct>(f: &mut F, (a, b): (&T, &T)) -> bool
+    where
+      F: ~const FnMut(&T) -> K + ~const Destruct,
+    {
+      f(a).lt(&f(b))
+    }
+    const_sort::const_partition_at_index(self, index, ConstFnMutClosure::new(&mut f, imp))
   }
 
   #[inline]
@@ -516,7 +516,7 @@ impl<T> const ConstSliceSortExt<T> for [T] {
   }
   fn const_is_sorted_by<F>(&self, mut compare: F) -> bool
   where
-    F: ~const FnMut(&T, &T) -> Option<Ordering> + ~const Destruct,
+    for<'a> F: ~const FnMut(&'a T, &'a T) -> Option<Ordering> + ~const Destruct,
   {
     // https://doc.rust-lang.org/nightly/src/core/iter/traits/iterator.rs.html#3794
     let mut i = 1;
@@ -539,10 +539,16 @@ impl<T> const ConstSliceSortExt<T> for [T] {
     F: ~const FnMut(&T) -> K + ~const Destruct,
     K: ~const PartialOrd + ~const Destruct,
   {
-    self.const_is_sorted_by(
-      const_closure!(FnMut for<T, K: PartialOrd, F: FnMut(&T) -> K> [f: F] (a:&T, b:&T) -> Option<Ordering> {
-        f(a).partial_cmp(&f(b))
-      }),
-    )
+    const fn imp<'a, T, F, K: ~const PartialOrd + ~const Destruct>(
+      f: &mut F,
+      (a, b): (&'a T, &'a T),
+    ) -> Option<core::cmp::Ordering>
+    where
+      T: ~const Destruct,
+      for<'r> F: ~const FnMut(&'r T) -> K + ~const Destruct,
+    {
+      f(a).partial_cmp(&f(b))
+    }
+    self.const_is_sorted_by(ConstFnMutClosure::new(&mut f, imp))
   }
 }
