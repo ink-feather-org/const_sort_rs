@@ -70,6 +70,7 @@ impl<T> const ConstSplitAtMutExtensions<T> for [T] {
   #[inline]
   #[track_caller]
   fn const_split_at_mut(&mut self, mid: usize) -> (&mut [T], &mut [T]) {
+    // https://doc.rust-lang.org/nightly/src/core/slice/mod.rs.html#1583
     assert!(mid <= self.len());
     // SAFETY: `[ptr; mid]` and `[mid; len]` are inside `self`, which
     // fulfils the requirements of `from_raw_parts_mut`.
@@ -78,6 +79,7 @@ impl<T> const ConstSplitAtMutExtensions<T> for [T] {
 
   #[inline]
   unsafe fn const_split_at_mut_unchecked(&mut self, mid: usize) -> (&mut [T], &mut [T]) {
+    // https://doc.rust-lang.org/nightly/src/core/slice/mod.rs.html#1684
     let len = self.len();
     let ptr = self.as_mut_ptr();
 
