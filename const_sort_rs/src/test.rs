@@ -5,7 +5,7 @@ use alloc::vec::Vec;
 use rand::{prelude::StdRng, Rng, SeedableRng};
 
 pub use crate::const_sort::{const_heapsort, const_quicksort};
-use crate::{const_pred_lt, ConstSliceSortExt};
+use crate::{const_slice_sort_ext::const_pred_lt, ConstSliceSortExt};
 
 const RAND_CNT: usize = 10_000;
 
