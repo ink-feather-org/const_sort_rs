@@ -378,7 +378,7 @@ pub trait ConstSliceSortExt<T> {
   #[must_use]
   fn const_is_sorted_by<F>(&self, compare: F) -> bool
   where
-    F: for<'a> FnMut(&'a T, &'a T) -> Option<Ordering>;
+    F: FnMut(&T, &T) -> Option<Ordering>;
   /// Checks if the elements of this slice are sorted using the given key extraction function.
   ///
   /// Instead of comparing the slice's elements directly, this function compares the keys of the
@@ -522,7 +522,7 @@ impl<T: ~const Destruct> const ConstSliceSortExt<T> for [T] {
   }
   fn const_is_sorted_by<F>(&self, mut compare: F) -> bool
   where
-    for<'a> F: ~const FnMut(&'a T, &'a T) -> Option<Ordering> + ~const Destruct,
+    F: ~const FnMut(&T, &T) -> Option<Ordering> + ~const Destruct,
   {
     // https://doc.rust-lang.org/nightly/src/core/iter/traits/iterator.rs.html#3794
     let mut i = 1;
@@ -544,13 +544,13 @@ impl<T: ~const Destruct> const ConstSliceSortExt<T> for [T] {
     F: ~const FnMut(&T) -> K + ~const Destruct,
     K: ~const PartialOrd + ~const Destruct,
   {
-    const fn imp<'a, T, F, K: ~const PartialOrd + ~const Destruct>(
+    const fn imp<T, F, K: ~const PartialOrd + ~const Destruct>(
       f: &mut F,
-      (a, b): (&'a T, &'a T),
+      (a, b): (&T, &T),
     ) -> Option<core::cmp::Ordering>
     where
       T: ~const Destruct,
-      for<'r> F: ~const FnMut(&'r T) -> K + ~const Destruct,
+      F: ~const FnMut(&T) -> K + ~const Destruct,
     {
       // https://doc.rust-lang.org/nightly/src/core/iter/traits/iterator.rs.html#3840
       // self.map(f).is_sorted()
