@@ -667,12 +667,10 @@ const fn break_patterns<T>(v: &mut [T]) {
     // Pseudorandom number generator from the "Xorshift RNGs" paper by George Marsaglia.
     let mut random = len as u32;
     const fn gen_u32(random: &mut u32) -> u32 {
-      let mut r = *random;
-      r ^= r << 13;
-      r ^= r >> 17;
-      r ^= r << 5;
-      *random = r;
-      r
+      *random ^= *random << 13;
+      *random ^= *random >> 17;
+      *random ^= *random << 5;
+      *random
     }
     const fn gen_usize(random: &mut u32) -> usize {
       if usize::BITS <= 32 {

@@ -89,7 +89,7 @@ pub(crate) mod slice_const_split_at_mut;
 pub mod const_sort;
 
 mod const_slice_sort_ext;
-pub use const_slice_sort_ext::*;
+pub use const_slice_sort_ext::ConstSliceSortExt;
 
 #[cfg(test)]
 mod test;
