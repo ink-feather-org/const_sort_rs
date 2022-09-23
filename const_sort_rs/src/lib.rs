@@ -2,6 +2,7 @@
 #![deny(missing_docs)]
 #![deny(unsafe_op_in_unsafe_fn)]
 #![warn(clippy::undocumented_unsafe_blocks, clippy::pedantic, clippy::nursery)]
+#![allow(clippy::items_after_statements)]
 #![feature(const_refs_to_cell)] // const_sort_core
 #![feature(const_trait_impl)] // const_sort_core
 #![feature(const_num_from_num)] // const_sort_core
@@ -26,15 +27,6 @@
 #![feature(is_sorted)]
 
 /*!
-# const_sort_rs
-
-[![Rust-CI](https://github.com/raldone01/const_sort_rs/actions/workflows/rust.yml/badge.svg)](https://github.com/raldone01/const_sort_rs/actions/workflows/rust.yml)
-[![docs.rs](https://docs.rs/const_sort_rs/badge.svg)](https://docs.rs/const_sort_rs)
-[![crates.io](https://img.shields.io/crates/v/const_sort_rs.svg)](https://crates.io/crates/const_sort_rs)
-[![rustc](https://img.shields.io/badge/rustc-nightly-lightgrey)](https://doc.rust-lang.org/nightly/std/)
-
-<!-- The rest of this section comes straight from the crate docs from the source. -->
-
 ## Requirements
 
 This crate requires a nightly compiler.
@@ -86,6 +78,15 @@ conditions.
 pub(crate) mod fake_usize_ptr;
 pub(crate) mod slice_const_split_at_mut;
 
+#[allow(
+  clippy::undocumented_unsafe_blocks,
+  clippy::identity_op,
+  clippy::unnecessary_mut_passed,
+  clippy::too_many_lines,
+  clippy::doc_markdown,
+  clippy::cognitive_complexity,
+  clippy::cast_possible_truncation
+)]
 pub mod const_sort;
 
 mod const_slice_sort_ext;

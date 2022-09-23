@@ -199,7 +199,7 @@ where
   // for i in 1..v.len() {
   let mut i = 1;
   while i < v.len() {
-    shift_tail(&mut v[..i + 1], is_less);
+    shift_tail(&mut v[..=i], is_less);
     i += 1;
   }
 }
@@ -900,7 +900,7 @@ const fn recurse<'a, T, F>(
 /// Constified version of `core::slice::quicksort`.
 ///
 /// Note: Unstable sort.
-pub const fn const_quicksort<'a, T, F>(v: &mut [T], mut is_less: F)
+pub const fn const_quicksort<T, F>(v: &mut [T], mut is_less: F)
 where
   F: ~const FnMut(&T, &T) -> bool + ~const Destruct,
 {
@@ -948,7 +948,7 @@ const fn partition_at_index_loop<'a, T, F>(
 
         // Otherwise, continue sorting elements greater than the pivot.
         v = &mut v[mid..];
-        index = index - mid;
+        index -= mid;
         pred = None;
         continue;
       }

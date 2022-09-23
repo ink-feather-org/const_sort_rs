@@ -2,7 +2,7 @@ use core::cmp::Ordering;
 use core::ops::{Index, IndexMut};
 
 #[derive(Eq, Clone, Copy)]
-pub(crate) struct FakeUsizePtr(usize);
+pub struct FakeUsizePtr(usize);
 impl FakeUsizePtr {
   pub const fn null_mut() -> Self {
     Self(0)

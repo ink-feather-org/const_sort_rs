@@ -414,7 +414,7 @@ pub trait ConstSliceSortExt<T> {
     K: PartialOrd;
 }
 
-pub(crate) const fn const_pred_lt<T: Ord + ~const PartialOrd>(a: &T, b: &T) -> bool {
+pub const fn const_pred_lt<T: Ord + ~const PartialOrd>(a: &T, b: &T) -> bool {
   a.lt(b)
 }
 

@@ -21,13 +21,13 @@ fn const_core_slice_heapsort() {
     const_heapsort(&mut v, const_pred_lt);
     v
   };
-  assert_eq!(&ARR, &[2, 3, 4, 5])
+  assert_eq!(&ARR, &[2, 3, 4, 5]);
 }
 #[test]
 fn const_core_slice_heapsort_rng() {
   let mut v = gen_array(RAND_CNT);
   const_heapsort(&mut v, const_pred_lt);
-  assert!(v.is_sorted())
+  assert!(v.is_sorted());
 }
 
 #[test]
@@ -37,25 +37,25 @@ fn const_core_slice_quicksort() {
     const_quicksort(&mut v, const_pred_lt);
     v
   };
-  assert_eq!(&ARR, &[2, 3, 4, 5])
+  assert_eq!(&ARR, &[2, 3, 4, 5]);
 }
 #[test]
 fn const_core_slice_quicksort_rng() {
   let mut v = gen_array(RAND_CNT);
   const_quicksort(&mut v, const_pred_lt);
-  assert!(v.is_sorted())
+  assert!(v.is_sorted());
 }
 
 #[test]
 fn const_core_slice_sort_unstable() {
   let mut v = gen_array(RAND_CNT);
   v.const_sort_unstable();
-  assert!(v.is_sorted())
+  assert!(v.is_sorted());
 }
 #[test]
 fn const_core_slice_sort_unstable_by() {
   let mut v = gen_array(RAND_CNT);
-  v.const_sort_unstable_by(|a, b| a.cmp(b));
+  v.const_sort_unstable_by(Ord::cmp);
   assert!(v.is_sorted());
 }
 
@@ -86,8 +86,8 @@ mod from_rustc {
 
       for &modulus in &[5, 10, 100, 1000] {
         for _ in 0..rounds {
-          for i in 0..len {
-            v[i] = rng.gen::<i32>() % modulus;
+          for item in v.iter_mut().take(len) {
+            *item = rng.gen::<i32>() % modulus;
           }
 
           // Sort in default order.
@@ -97,7 +97,7 @@ mod from_rustc {
 
           // Sort in ascending order.
           tmp.copy_from_slice(v);
-          tmp.const_sort_unstable_by(|a, b| a.cmp(b));
+          tmp.const_sort_unstable_by(Ord::cmp);
           assert!(tmp.windows(2).all(|w| w[0] <= w[1]));
 
           // Sort in descending order.
@@ -120,13 +120,13 @@ mod from_rustc {
 
     // Sort using a completely random comparison function.
     // This will reorder the elements *somehow*, but won't panic.
-    for i in 0..v.len() {
-      v[i] = i as i32;
+    for (i, item) in v.iter_mut().enumerate() {
+      *item = i32::try_from(i).unwrap();
     }
     v.const_sort_unstable_by(|_, _| *[Less, Equal, Greater].choose(&mut rng).unwrap());
     v.const_sort_unstable();
-    for i in 0..v.len() {
-      assert_eq!(v[i], i as i32);
+    for (i, &item) in v.iter().enumerate() {
+      assert_eq!(item, i32::try_from(i).unwrap());
     }
 
     // Should not panic.
@@ -134,14 +134,15 @@ mod from_rustc {
     [(); 10].const_sort_unstable();
     [(); 100].const_sort_unstable();
 
-    let mut v = [0xDEADBEEFu64];
+    let mut v = [0xDEAD_BEEF_u64];
     v.const_sort_unstable();
-    assert!(v == [0xDEADBEEF]);
+    assert!(v == [0xDEAD_BEEF]);
   }
 
   #[test]
   #[cfg(not(target_arch = "wasm32"))]
   #[cfg_attr(miri, ignore)] // Miri is too slow
+  #[allow(clippy::cognitive_complexity)]
   fn select_nth_unstable() {
     use core::cmp::Ordering::{Equal, Greater, Less};
     use rand::rngs::StdRng;
@@ -155,13 +156,13 @@ mod from_rustc {
 
       for &modulus in &[5, 10, 1000] {
         for _ in 0..10 {
-          for i in 0..len {
-            orig[i] = rng.gen::<i32>() % modulus;
+          for item in orig.iter_mut().take(len) {
+            *item = rng.gen::<i32>() % modulus;
           }
 
           let v_sorted = {
             let mut v = orig.clone();
-            v.sort();
+            v.const_sort_unstable();
             v
           };
 
@@ -181,7 +182,7 @@ mod from_rustc {
           // Sort in ascending order.
           for pivot in 0..len {
             let mut v = orig.clone();
-            let (left, pivot, right) = v.const_select_nth_unstable_by(pivot, |a, b| a.cmp(b));
+            let (left, pivot, right) = v.const_select_nth_unstable_by(pivot, Ord::cmp);
 
             assert_eq!(left.len() + right.len(), len - 1);
 
@@ -220,17 +221,17 @@ mod from_rustc {
     // Sort at index using a completely random comparison function.
     // This will reorder the elements *somehow*, but won't panic.
     let mut v = [0; 500];
-    for i in 0..v.len() {
-      v[i] = i as i32;
+    for (i, item) in v.iter_mut().enumerate() {
+      *item = i32::try_from(i).unwrap();
     }
 
     for pivot in 0..v.len() {
       v.const_select_nth_unstable_by(pivot, |_, _| {
         *[Less, Equal, Greater].choose(&mut rng).unwrap()
       });
-      v.sort();
-      for i in 0..v.len() {
-        assert_eq!(v[i], i as i32);
+      v.const_sort_unstable();
+      for (i, &item) in v.iter().enumerate() {
+        assert_eq!(item, i32::try_from(i).unwrap());
       }
     }
 
@@ -242,9 +243,9 @@ mod from_rustc {
     [(); 100].const_select_nth_unstable(50);
     [(); 100].const_select_nth_unstable(99);
 
-    let mut v = [0xDEADBEEFu64];
+    let mut v = [0xDEAD_BEEF_u64];
     v.const_select_nth_unstable(0);
-    assert!(v == [0xDEADBEEF]);
+    assert!(v == [0xDEAD_BEEF]);
   }
 
   #[test]
@@ -278,6 +279,3 @@ mod from_rustc {
 mod const_rustc {
   // TODO: port tinyrand to const
 }
-
-#[test]
-fn tmp_doc_test() {}
