@@ -2,6 +2,7 @@
 
 use core::slice;
 
+#[const_trait]
 /// FIXME: Remove once `const_slice_split_at_mut` lands.
 pub(crate) trait ConstSplitAtMutExtensions<T> {
   /// Divides one mutable slice into two at an index.

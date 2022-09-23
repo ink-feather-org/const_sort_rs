@@ -4,6 +4,7 @@ use const_closure::ConstFnMutClosure;
 
 use crate::const_sort;
 
+#[const_trait]
 /// Trait for sorting slices in const items.
 pub trait ConstSliceSortExt<T> {
   /// Sorts the slice, but might not preserve the order of equal elements.
