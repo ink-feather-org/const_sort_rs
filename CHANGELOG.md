@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2022-09-25
+
+Moved to [ink-feather-org](https://github.com/ink-feather-org/const_sort_rs).
+
 ### Fixes
 - Fixed clippy lints
 
@@ -20,8 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2022-09-14
 
-[Unreleased]: https://github.com/raldone01/const_sort_rs/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/raldone01/const_sort_rs/compare/v0.2.1...v0.3.0
-[0.2.1]: https://github.com/raldone01/const_sort_rs/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/raldone01/const_sort_rs/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/raldone01/const_sort_rs/releases/tag/v0.1.0
+[Unreleased]: https://github.com/ink-feather-org/const_sort_rs/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/ink-feather-org/const_sort_rs/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/ink-feather-org/const_sort_rs/compare/v0.2.1...v0.3.0
+[0.2.1]: https://github.com/ink-feather-org/const_sort_rs/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/ink-feather-org/const_sort_rs/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/ink-feather-org/const_sort_rs/releases/tag/v0.1.0

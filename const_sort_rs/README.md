@@ -1,7 +1,7 @@
 # const_sort_rs
 
-[![Daily-Nightly](https://github.com/raldone01/const_sort_rs/actions/workflows/rust_daily_nightly_check.yml/badge.svg)](https://github.com/raldone01/const_sort_rs/actions/workflows/rust_daily_nightly_check.yml)
-[![Rust-Main-CI](https://github.com/raldone01/const_sort_rs/actions/workflows/rust_main.yml/badge.svg)](https://github.com/raldone01/const_sort_rs/actions/workflows/rust_main.yml)
+[![Daily-Nightly](https://github.com/ink-feather-org/const_sort_rs/actions/workflows/rust_daily_nightly_check.yml/badge.svg)](https://github.com/ink-feather-org/const_sort_rs/actions/workflows/rust_daily_nightly_check.yml)
+[![Rust-Main-CI](https://github.com/ink-feather-org/const_sort_rs/actions/workflows/rust_main.yml/badge.svg)](https://github.com/ink-feather-org/const_sort_rs/actions/workflows/rust_main.yml)
 [![docs.rs](https://docs.rs/const_sort_rs/badge.svg)](https://docs.rs/const_sort_rs)
 [![crates.io](https://img.shields.io/crates/v/const_sort_rs.svg)](https://crates.io/crates/const_sort_rs)
 [![rustc](https://img.shields.io/badge/rustc-nightly-lightgrey)](https://doc.rust-lang.org/nightly/std/)
@@ -42,8 +42,8 @@ assert_eq!(V, [-5, -3, 1, 2, 4])
 
 This project is released under either:
 
-- [MIT License](https://github.com/raldone01/const_sort_rs/blob/main/LICENSE-MIT)
-- [Apache License (Version 2.0)](https://github.com/raldone01/const_sort_rs/blob/main/LICENSE-APACHE)
+- [MIT License](https://github.com/ink-feather-org/const_sort_rs/blob/main/LICENSE-MIT)
+- [Apache License (Version 2.0)](https://github.com/ink-feather-org/const_sort_rs/blob/main/LICENSE-APACHE)
 
 at your choosing.
 

@@ -1,6 +1,6 @@
 [package]
 name = "const_sort_rs"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 authors = [
@@ -8,8 +8,8 @@ authors = [
   "onestacked <chrisi.schrefl@gmail.com>",
 ]
 description = "Sort slices in const items."
-homepage = "https://github.com/raldone01/const_sort_rs"
-repository = "https://github.com/raldone01/const_sort_rs"
+homepage = "https://github.com/ink-feather-org/const_sort_rs"
+repository = "https://github.com/ink-feather-org/const_sort_rs"
 categories = ["no-std", "rust-patterns"]
 keywords = ["sort", "const", "nightly", "sort_internals"]
 
