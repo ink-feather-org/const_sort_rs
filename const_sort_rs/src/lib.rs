@@ -14,13 +14,12 @@
 #![feature(const_ptr_read)] // const_sort_core
 #![feature(const_deref)] // const_sort_core
 #![feature(const_reverse)] // const_sort_core
-#![feature(mixed_integer_ops)] // const_sort_core
+#![feature(const_slice_split_at_mut)] // const_sort_core
 #![feature(const_maybe_uninit_write)] // const_sort_core
 #![feature(core_intrinsics)] // const_sort_core
 #![feature(const_eval_select)] // const_sort_core
 #![feature(const_slice_index)] // const_sort_core
 #![feature(const_cmp)] // const_sort_core
-#![feature(const_slice_from_raw_parts_mut)] // slice_const_split_at_mut FIXME: Replace with const_slice_split_at_mut once it lands.
 #![feature(unboxed_closures)] // const_slice_sort_ext
 #![feature(fn_traits)] // const_slice_sort_ext
 // For tests
@@ -76,7 +75,6 @@ conditions.
 */
 
 pub(crate) mod fake_usize_ptr;
-pub(crate) mod slice_const_split_at_mut;
 
 #[allow(
   clippy::undocumented_unsafe_blocks,

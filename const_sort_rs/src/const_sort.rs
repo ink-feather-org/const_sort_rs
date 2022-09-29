@@ -15,7 +15,6 @@ use core::mem::{self, MaybeUninit};
 use core::ptr;
 
 use crate::fake_usize_ptr::FakeUsizePtr;
-use crate::slice_const_split_at_mut::ConstSplitAtMutExtensions;
 
 /// When dropped, copies from `src` into `dest`.
 struct CopyOnDrop<T> {
@@ -546,7 +545,7 @@ where
   let (mid, was_partitioned) = {
     // Place the pivot at the beginning of slice.
     v.swap(0, pivot);
-    let (pivot, v) = v.const_split_at_mut(1);
+    let (pivot, v) = v.split_at_mut(1);
     let pivot = &mut pivot[0];
 
     // Read the pivot into a stack-allocated variable for efficiency. If a following comparison
@@ -606,7 +605,7 @@ where
 {
   // Place the pivot at the beginning of slice.
   v.swap(0, pivot);
-  let (pivot, v) = v.const_split_at_mut(1);
+  let (pivot, v) = v.split_at_mut(1);
   let pivot = &mut pivot[0];
 
   // Read the pivot into a stack-allocated variable for efficiency. If a following comparison
@@ -877,8 +876,8 @@ const fn recurse<'a, T, F>(
     was_partitioned = was_p;
 
     // Split the slice into `left`, `pivot`, and `right`.
-    let (left, right) = v.const_split_at_mut(mid);
-    let (pivot, right) = right.const_split_at_mut(1);
+    let (left, right) = v.split_at_mut(mid);
+    let (pivot, right) = right.split_at_mut(1);
     let pivot = &pivot[0];
 
     // Recurse into the shorter side only in order to minimize the total number of recursive
@@ -957,8 +956,8 @@ const fn partition_at_index_loop<'a, T, F>(
     let (mid, _) = partition(v, pivot, is_less);
 
     // Split the slice into `left`, `pivot`, and `right`.
-    let (left, right) = v.const_split_at_mut(mid);
-    let (pivot, right) = right.const_split_at_mut(1);
+    let (left, right) = v.split_at_mut(mid);
+    let (pivot, right) = right.split_at_mut(1);
     let pivot = &pivot[0];
 
     if mid < index {
@@ -1026,8 +1025,8 @@ where
     partition_at_index_loop(v, index, &mut is_less, None);
   }
 
-  let (left, right) = v.const_split_at_mut(index);
-  let (pivot, right) = right.const_split_at_mut(1);
+  let (left, right) = v.split_at_mut(index);
+  let (pivot, right) = right.split_at_mut(1);
   let pivot = &mut pivot[0];
   (left, pivot, right)
 }
