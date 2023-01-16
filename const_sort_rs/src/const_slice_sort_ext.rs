@@ -418,7 +418,7 @@ pub const fn const_pred_lt<T: Ord + ~const PartialOrd>(a: &T, b: &T) -> bool {
   a.lt(b)
 }
 
-impl<T: ~const Destruct> const ConstSliceSortExt<T> for [T] {
+impl<T> const ConstSliceSortExt<T> for [T] {
   #[inline]
   fn const_sort_unstable(&mut self)
   where
@@ -556,11 +556,10 @@ impl<T: ~const Destruct> const ConstSliceSortExt<T> for [T] {
       (a, b): (&T, &T),
     ) -> Option<core::cmp::Ordering>
     where
-      T: ~const Destruct,
       F: ~const FnMut(&T) -> K + ~const Destruct,
     {
       // https://doc.rust-lang.org/nightly/src/core/iter/traits/iterator.rs.html#3840
-      // self.map(f).is_sorted()
+      // self.map(f).is_sorted() unnecessary
       f(a).partial_cmp(&f(b))
     }
     self.const_is_sorted_by(ConstClosure::new((&mut f,), imp))
