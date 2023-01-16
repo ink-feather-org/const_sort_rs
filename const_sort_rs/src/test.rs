@@ -5,7 +5,7 @@ use alloc::vec::Vec;
 use rand::{prelude::StdRng, Rng, SeedableRng};
 
 pub use crate::const_sort::{const_heapsort, const_quicksort};
-use crate::{const_slice_sort_ext::const_pred_lt, ConstSliceSortExt};
+use crate::ConstSliceSortExt;
 
 const RAND_CNT: usize = 10_000;
 
@@ -18,7 +18,7 @@ fn gen_array(n: usize) -> Vec<u32> {
 fn const_core_slice_heapsort() {
   const ARR: [u8; 4] = {
     let mut v = [2, 3, 5, 4];
-    const_heapsort(&mut v, const_pred_lt);
+    const_heapsort(&mut v, PartialOrd::lt);
     v
   };
   assert_eq!(&ARR, &[2, 3, 4, 5]);
@@ -26,7 +26,7 @@ fn const_core_slice_heapsort() {
 #[test]
 fn const_core_slice_heapsort_rng() {
   let mut v = gen_array(RAND_CNT);
-  const_heapsort(&mut v, const_pred_lt);
+  const_heapsort(&mut v, PartialOrd::lt);
   assert!(v.is_sorted());
 }
 
@@ -34,7 +34,7 @@ fn const_core_slice_heapsort_rng() {
 fn const_core_slice_quicksort() {
   const ARR: [u8; 4] = {
     let mut v = [2, 3, 5, 4];
-    const_quicksort(&mut v, const_pred_lt);
+    const_quicksort(&mut v, PartialOrd::lt);
     v
   };
   assert_eq!(&ARR, &[2, 3, 4, 5]);
@@ -42,7 +42,7 @@ fn const_core_slice_quicksort() {
 #[test]
 fn const_core_slice_quicksort_rng() {
   let mut v = gen_array(RAND_CNT);
-  const_quicksort(&mut v, const_pred_lt);
+  const_quicksort(&mut v, PartialOrd::lt);
   assert!(v.is_sorted());
 }
 
