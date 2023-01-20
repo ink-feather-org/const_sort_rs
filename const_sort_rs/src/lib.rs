@@ -3,6 +3,7 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 #![warn(clippy::undocumented_unsafe_blocks, clippy::pedantic, clippy::nursery)]
 #![allow(clippy::items_after_statements)]
+#![allow(incomplete_features)] // const_closures
 #![feature(const_refs_to_cell)] // const_sort_core
 #![feature(const_trait_impl)] // const_sort_core
 #![feature(const_num_from_num)] // const_sort_core
@@ -18,6 +19,7 @@
 #![feature(const_maybe_uninit_write)] // const_sort_core
 #![feature(core_intrinsics)] // const_sort_core
 #![feature(const_eval_select)] // const_sort_core
+#![feature(const_closures)] // const_sort_core
 #![feature(const_slice_index)] // const_sort_core
 #![feature(const_cmp)] // const_sort_core
 #![feature(unboxed_closures)] // const_slice_sort_ext

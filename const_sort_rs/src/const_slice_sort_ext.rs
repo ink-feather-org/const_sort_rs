@@ -1,7 +1,5 @@
 use core::{cmp::Ordering, marker::Destruct};
 
-use const_closure::ConstClosure;
-
 use crate::const_sort;
 
 #[const_trait]
@@ -429,14 +427,7 @@ impl<T> const ConstSliceSortExt<T> for [T] {
     F: ~const FnMut(&T, &T) -> Ordering + ~const Destruct,
   {
     // https://doc.rust-lang.org/nightly/src/core/slice/mod.rs.html#2594
-    // sort::const_quicksort(self, |a, b| compare(a, b) == Ordering::Less);
-    const fn imp<T>(
-      (compare,): (&mut impl ~const FnMut(&T, &T) -> Ordering,),
-      (a, b): (&T, &T),
-    ) -> bool {
-      compare(a, b) == Ordering::Less
-    }
-    const_sort::const_quicksort(self, ConstClosure::new((&mut compare,), imp));
+    const_sort::const_quicksort(self, const |a, b| compare(a, b) == Ordering::Less);
   }
   #[inline]
   fn const_sort_unstable_by_key<K, F>(&mut self, mut f: F)
@@ -445,14 +436,7 @@ impl<T> const ConstSliceSortExt<T> for [T] {
     K: Ord + ~const PartialOrd + ~const Destruct,
   {
     // https://doc.rust-lang.org/nightly/src/core/slice/mod.rs.html#2632
-    // sort::quicksort(self, |a, b| f(a).lt(&f(b)));
-    const fn imp<T, K: ~const PartialOrd + ~const Destruct>(
-      (f,): (&mut impl ~const FnMut(&T) -> K,),
-      (a, b): (&T, &T),
-    ) -> bool {
-      f(a).lt(&f(b))
-    }
-    const_sort::const_quicksort(self, ConstClosure::new((&mut f,), imp));
+    const_sort::const_quicksort(self, const |a, b| f(a).lt(&f(b)));
   }
 
   #[inline]
@@ -461,9 +445,8 @@ impl<T> const ConstSliceSortExt<T> for [T] {
     T: ~const PartialOrd + Ord,
   {
     // https://doc.rust-lang.org/nightly/src/core/slice/mod.rs.html#2678
-    // let mut f = |a: &T, b: &T| a.lt(b);
-    // sort::partition_at_index(self, index, &mut f)
-    const_sort::const_partition_at_index(self, index, PartialOrd::lt)
+    let mut f = const |a: &T, b: &T| a.lt(b);
+    const_sort::const_partition_at_index(self, index, &mut f)
   }
   #[inline]
   fn const_select_nth_unstable_by<F>(
@@ -475,15 +458,8 @@ impl<T> const ConstSliceSortExt<T> for [T] {
     F: ~const FnMut(&T, &T) -> Ordering + ~const Destruct,
   {
     // https://doc.rust-lang.org/nightly/src/core/slice/mod.rs.html#2725
-    // let mut f = |a: &T, b: &T| compare(a, b) == Less;
-    // sort::partition_at_index(self, index, &mut f)
-    const fn imp<T>(
-      (compare,): (&mut impl ~const FnMut(&T, &T) -> Ordering,),
-      (a, b): (&T, &T),
-    ) -> bool {
-      compare(a, b) == Ordering::Less
-    }
-    const_sort::const_partition_at_index(self, index, ConstClosure::new((&mut compare,), imp))
+    let mut f = const |a: &T, b: &T| compare(a, b) == Ordering::Less;
+    const_sort::const_partition_at_index(self, index, &mut f)
   }
   #[inline]
   fn const_select_nth_unstable_by_key<K, F>(
@@ -496,15 +472,8 @@ impl<T> const ConstSliceSortExt<T> for [T] {
     K: Ord + ~const PartialOrd + ~const Destruct,
   {
     // https://doc.rust-lang.org/nightly/src/core/slice/mod.rs.html#2776
-    // let mut g = |a: &T, b: &T| f(a).lt(&f(b));
-    // sort::partition_at_index(self, index, &mut g)
-    const fn imp<T, K: ~const PartialOrd + ~const Destruct>(
-      (f,): (&mut impl ~const FnMut(&T) -> K,),
-      (a, b): (&T, &T),
-    ) -> bool {
-      f(a).lt(&f(b))
-    }
-    const_sort::const_partition_at_index(self, index, ConstClosure::new((&mut f,), imp))
+    let mut g = const |a: &T, b: &T| f(a).lt(&f(b));
+    const_sort::const_partition_at_index(self, index, &mut g)
   }
 
   #[inline]
@@ -538,17 +507,6 @@ impl<T> const ConstSliceSortExt<T> for [T] {
     F: ~const FnMut(&T) -> K + ~const Destruct,
     K: ~const PartialOrd + ~const Destruct,
   {
-    const fn imp<T, F, K: ~const PartialOrd + ~const Destruct>(
-      (f,): (&mut F,),
-      (a, b): (&T, &T),
-    ) -> Option<core::cmp::Ordering>
-    where
-      F: ~const FnMut(&T) -> K,
-    {
-      // https://doc.rust-lang.org/nightly/src/core/iter/traits/iterator.rs.html#3840
-      // self.map(f).is_sorted() unnecessary
-      f(a).partial_cmp(&f(b))
-    }
-    self.const_is_sorted_by(ConstClosure::new((&mut f,), imp))
+    self.const_is_sorted_by(const |a, b| f(a).partial_cmp(&f(b)))
   }
 }
