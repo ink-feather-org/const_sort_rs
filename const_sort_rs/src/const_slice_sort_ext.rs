@@ -445,8 +445,7 @@ impl<T> const ConstSliceSortExt<T> for [T] {
     T: ~const PartialOrd + Ord,
   {
     // https://doc.rust-lang.org/nightly/src/core/slice/mod.rs.html#2678
-    let mut f = const |a: &T, b: &T| a.lt(b);
-    const_sort::const_partition_at_index(self, index, &mut f)
+    const_sort::const_partition_at_index(self, index, PartialOrd::lt)
   }
   #[inline]
   fn const_select_nth_unstable_by<F>(
