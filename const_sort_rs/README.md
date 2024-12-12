@@ -1,12 +1,16 @@
 # const_sort_rs
 
-[![Daily-Nightly](https://github.com/ink-feather-org/const_sort_rs/actions/workflows/rust_daily_nightly_check.yml/badge.svg)](https://github.com/ink-feather-org/const_sort_rs/actions/workflows/rust_daily_nightly_check.yml)
-[![Rust-Main-CI](https://github.com/ink-feather-org/const_sort_rs/actions/workflows/rust_main.yml/badge.svg)](https://github.com/ink-feather-org/const_sort_rs/actions/workflows/rust_main.yml)
 [![docs.rs](https://docs.rs/const_sort_rs/badge.svg)](https://docs.rs/const_sort_rs)
 [![crates.io](https://img.shields.io/crates/v/const_sort_rs.svg)](https://crates.io/crates/const_sort_rs)
 [![rustc](https://img.shields.io/badge/rustc-nightly-lightgrey)](https://doc.rust-lang.org/nightly/std/)
 
 <!-- The rest of this section comes straight from the crate docs from the source. -->
+
+# THIS CRATE IS BROKEN - Archive Note
+
+The last tested working rust version is `1.71.0-nightly (nightly-2023-04-19)`.
+Most const traits have been removed from the standard library.
+Once they are back this crate might make a return if it is still needed.
 
 ## Requirements
 
