@@ -1,12 +1,14 @@
-"cSpell.diagnosticLevel": "Information",
 {
+    "cSpell.diagnosticLevel": "Information",
     "cSpell.words": [
         "behaviour",
         "branchless",
+        "clippy",
         "Constified",
         "elem",
         "heapsort",
         "intrinsics",
+        "isize",
         "libcore",
         "Marsaglia",
         "mut_refs",
@@ -15,10 +17,14 @@
         "pdqsort",
         "pred",
         "refs",
+        "rustc",
         "Seedable",
         "Uninit",
         "VLAs",
-        "Xorshift",
-        "rustc"
+        "Xorshift"
+    ],
+    "rust-analyzer.cargo.extraArgs": [
+        "-Z",
+        "unstable-options"
     ]
 }
