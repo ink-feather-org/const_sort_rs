@@ -1,5 +1,5 @@
 [package]
-name = "const_sort_rs"
+name = "const_sort"
 version = "0.3.4"
 edition = "2021"
 license = "MIT OR Apache-2.0"

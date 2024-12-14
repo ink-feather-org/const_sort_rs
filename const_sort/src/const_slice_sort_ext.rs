@@ -26,7 +26,7 @@ pub trait ConstSliceSortExt<T> {
   /// ```rust
   /// #![feature(const_mut_refs)]
   /// #![feature(const_trait_impl)]
-  /// use const_sort_rs::ConstSliceSortExt;
+  /// use const_sort::ConstSliceSortExt;
   ///
   /// const V: [isize; 5] = {
   ///   let mut v = [-5, 4, 1, -3, 2];
@@ -62,7 +62,7 @@ pub trait ConstSliceSortExt<T> {
   /// #![feature(const_cmp)]
   /// #![feature(const_option)]
   /// # use core::cmp::Ordering;
-  /// use const_sort_rs::ConstSliceSortExt;
+  /// use const_sort::ConstSliceSortExt;
   ///
   /// const FLOATS: [f64; 5] = {
   ///   let mut floats = [5f64, 4.0, 1.0, 3.0, 2.0];
@@ -94,7 +94,7 @@ pub trait ConstSliceSortExt<T> {
   /// #![feature(const_trait_impl)]
   /// #![feature(const_cmp)]
   /// # use core::cmp::Ordering;
-  /// use const_sort_rs::ConstSliceSortExt;
+  /// use const_sort::ConstSliceSortExt;
   ///
   /// const V: [i32; 5] = [5, 4, 1, 3, 2];
   ///
@@ -151,7 +151,7 @@ pub trait ConstSliceSortExt<T> {
   /// #![feature(const_mut_refs)]
   /// #![feature(const_trait_impl)]
   /// #![feature(const_cmp)]
-  /// use const_sort_rs::ConstSliceSortExt;
+  /// use const_sort::ConstSliceSortExt;
   ///
   /// const V: [i32; 5] = {
   ///   let mut v = [-5i32, 4, 1, -3, 2];
@@ -197,7 +197,7 @@ pub trait ConstSliceSortExt<T> {
   /// ```
   /// #![feature(const_mut_refs)]
   /// #![feature(const_trait_impl)]
-  /// use const_sort_rs::ConstSliceSortExt;
+  /// use const_sort::ConstSliceSortExt;
   /// const V: [i32; 5] = {
   ///   let mut v = [-5i32, 4, 1, -3, 2];
   ///   // Find the median
@@ -246,7 +246,7 @@ pub trait ConstSliceSortExt<T> {
   /// #![feature(const_trait_impl)]
   /// #![feature(const_cmp)]
   /// # use core::cmp::Ordering;
-  /// use const_sort_rs::ConstSliceSortExt;
+  /// use const_sort::ConstSliceSortExt;
   ///
   /// const V: [i32; 5] = {
   ///   let mut v = [-5i32, 4, 1, -3, 2];
@@ -304,7 +304,7 @@ pub trait ConstSliceSortExt<T> {
   /// #![feature(const_mut_refs)]
   /// #![feature(const_trait_impl)]
   /// #![feature(const_cmp)]
-  /// use const_sort_rs::ConstSliceSortExt;
+  /// use const_sort::ConstSliceSortExt;
   ///
   /// const V: [i32; 5] = {
   ///   let mut v = [-5i32, 4, 1, -3, 2];
@@ -349,7 +349,7 @@ pub trait ConstSliceSortExt<T> {
   /// ```
   /// #![feature(const_mut_refs)]
   /// #![feature(const_trait_impl)]
-  /// use const_sort_rs::ConstSliceSortExt;
+  /// use const_sort::ConstSliceSortExt;
   ///
   /// const A: bool = [1, 2, 2, 9].const_is_sorted();
   /// assert!(A);
@@ -391,7 +391,7 @@ pub trait ConstSliceSortExt<T> {
   /// ```
   /// #![feature(const_mut_refs)]
   /// #![feature(const_trait_impl)]
-  /// use const_sort_rs::ConstSliceSortExt;
+  /// use const_sort::ConstSliceSortExt;
   ///
   /// const fn map_len(s: &&str) -> usize {
   ///   s.len()

@@ -1,7 +1,7 @@
-# const_sort_rs
+# const_sort
 
-[![docs.rs](https://docs.rs/const_sort_rs/badge.svg)](https://docs.rs/const_sort_rs)
-[![crates.io](https://img.shields.io/crates/v/const_sort_rs.svg)](https://crates.io/crates/const_sort_rs)
+[![docs.rs](https://docs.rs/const_sort/badge.svg)](https://docs.rs/const_sort)
+[![crates.io](https://img.shields.io/crates/v/const_sort.svg)](https://crates.io/crates/const_sort)
 [![rustc](https://img.shields.io/badge/rustc-nightly-lightgrey)](https://doc.rust-lang.org/nightly/std/)
 
 <!-- The rest of this section comes straight from the crate docs from the source. -->
@@ -28,7 +28,7 @@ Your types must implement `~const PartialOrd`.
 ```rust
 #![feature(const_mut_refs)]
 #![feature(const_trait_impl)]
-use const_sort_rs::ConstSliceSortExt;
+use const_sort::ConstSliceSortExt;
 
 const V: [isize; 5] = {
   let mut x = [-5, 4, 1, -3, 2];
